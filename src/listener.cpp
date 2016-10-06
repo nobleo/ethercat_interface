@@ -4,9 +4,10 @@
 #include <unistd.h>
 
 #include "ros/ros.h"
-#include "ethercat_demo/velocity_cmd.h"
-#include "ethercat_soem/ethercat.h"
 
+#include "ethercat_demo/ethercat_includes.h"
+
+#include "ethercat_demo/velocity_cmd.h"
 #include "ethercat_demo/el7332.h"
 #include "ethercat_demo/el2008.h"
 
@@ -156,8 +157,6 @@ void start_nobleo_bot(char *ifname)
 	if(setup_ethercat(ifname)){
 		motordriver.enable(0,TRUE);
 		motordriver.enable(1,TRUE);
-		motordriver.set_velocity(0,-3000);
-		motordriver.set_velocity(1,3000);
 	}
 	else{
 		printf("Initialization failed\n");
@@ -244,9 +243,14 @@ void *ecat_statecheck( void *ptr )
 void velocityCallback(const ethercat_demo::velocity_cmd::ConstPtr& msg)
 {
   	ROS_INFO("I heard: [%f, %f]", msg->velocity_left, msg->velocity_right);
+	float vl = msg->velocity_left;
+	float vr = msg->velocity_right;
+	
+	vl = (vl<1)?((vl>-1)?vl:-1):1;	
+	vr = (vr<1)?((vr>-1)?vr:-1):1;
 
-	motordriver.set_velocity(0,-6000*msg->velocity_left);
-	motordriver.set_velocity(1, 6000*msg->velocity_right);
+	motordriver.set_velocity(0,-12000*vr);
+	motordriver.set_velocity(1, 12000*vl);
 }
 
 int main(int argc, char **argv)

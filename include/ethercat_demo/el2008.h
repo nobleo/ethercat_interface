@@ -1,7 +1,7 @@
 #ifndef __EL2008_H
 #define __EL2008_H
 
-#include "ethercat_soem/ethercat.h"
+#include "ethercat_demo/ethercat_includes.h"
 
 class EL2008{
 	private:

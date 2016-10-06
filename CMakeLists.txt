@@ -20,3 +20,5 @@ include_directories(include ${catkin_INCLUDE_DIRS})
 add_executable(listener src/listener.cpp src/el2008.cpp src/el7332.cpp)
 target_link_libraries(listener ${catkin_LIBRARIES})
 
+add_executable(joy_teleop src/joy_teleop.cpp)
+target_link_libraries(joy_teleop ${catkin_LIBRARIES})
