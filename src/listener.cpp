@@ -20,6 +20,8 @@ pthread_t thread_pdo;
 
 volatile int expectedWKC;
 volatile int wkc;
+boolean needlf;
+boolean inOP;
 
 boolean pdo_transfer_active = FALSE;
 
@@ -28,95 +30,99 @@ EL2008 digitalOut(&ec_slave[2]);
 
 boolean setup_ethercat(char *ifname)
 {
-	int i,j, chk;
+    int i, j, oloop, iloop, wkc_count, chk;
+    needlf = FALSE;
+    inOP = FALSE;
 
-	printf("Starting simple test\n");
-
-	/* initialise SOEM, bind socket to ifname */
-	if (ec_init(ifname))
-	{
-		printf("ec_init on %s succeeded.\n",ifname);
-		/* find and auto-config slaves */
-
-		if ( ec_config_init(FALSE) > 0 ){
-			printf("%d slaves found and configured.\n",ec_slavecount);
-
-			ec_config_map(&IOmap);
-
-			ec_configdc();
+   printf("Starting simple test\n");
+   
+   /* initialise SOEM, bind socket to ifname */
+   if (ec_init(ifname))
+   {   
+      printf("ec_init on %s succeeded.\n",ifname);
+      /* find and auto-config slaves */
 
 
-			/* write configuration parameters for motor driver */
-			printf("before pointer declaration\n");			
-			uint16_t value, value3;
-			uint16_t *pValue;
-			pValue = &value3;
-			int size_of_value;
-			int workcounter;
-			value = 12000;
-			value3 = 999;
-			size_of_value = sizeof(value);
-			printf("before sdo read\n");
-			workcounter = ec_SDOwrite(3, 0x8010, 0x03, FALSE, size_of_value, &value,EC_TIMEOUTRXM);
-			printf("write workcounter = %d\n",workcounter);
-			workcounter = ec_SDOread(3, 0x8010, 0x03, FALSE, &size_of_value, pValue,EC_TIMEOUTRXM);
-			printf("read workcounter = %d\n",workcounter);
-			printf("Value  = %d (%d bytes)\n",value3, size_of_value);
+       if ( ec_config_init(FALSE) > 0 )
+      {
+         printf("%d slaves found and configured.\n",ec_slavecount);
+
+         ec_config_map(&IOmap);
+
+         ec_configdc();
+
+		/* write configuration parameters for motor driver */
+		printf("before pointer declaration\n");			
+		uint16_t value, value3;
+		uint16_t *pValue;
+		pValue = &value3;
+		int size_of_value;
+		int workcounter;
+		value = 12000;
+		value3 = 999;
+		size_of_value = sizeof(value);
+		printf("before sdo read\n");
+		workcounter = ec_SDOwrite(3, 0x8010, 0x03, FALSE, size_of_value, &value,EC_TIMEOUTRXM);
+		printf("write workcounter = %d\n",workcounter);
+		workcounter = ec_SDOread(3, 0x8010, 0x03, FALSE, &size_of_value, pValue,EC_TIMEOUTRXM);
+		printf("read workcounter = %d\n",workcounter);
+		printf("Value  = %d (%d bytes)\n",value3, size_of_value);
 
 
-			printf("Slaves mapped, state to SAFE_OP.\n");
-			/* wait for all slaves to reach SAFE_OP state */
-			ec_statecheck(0, EC_STATE_SAFE_OP,  EC_TIMEOUTSTATE * 4);
+         printf("Slaves mapped, state to SAFE_OP.\n");
+         /* wait for all slaves to reach SAFE_OP state */
+         ec_statecheck(0, EC_STATE_SAFE_OP,  EC_TIMEOUTSTATE * 4);
 
-			printf("segments : %d : %d %d %d %d\n",ec_group[0].nsegments ,ec_group[0].IOsegment[0],ec_group[0].IOsegment[1],ec_group[0].IOsegment[2],ec_group[0].IOsegment[3]);
+         printf("segments : %d : %d %d %d %d\n",ec_group[0].nsegments ,ec_group[0].IOsegment[0],ec_group[0].IOsegment[1],ec_group[0].IOsegment[2],ec_group[0].IOsegment[3]);
 
-			printf("Request operational state for all slaves\n");
-			expectedWKC = (ec_group[0].outputsWKC * 2) + ec_group[0].inputsWKC;
-			printf("Calculated workcounter %d\n", expectedWKC);
-
-
-			ec_slave[0].state = EC_STATE_OPERATIONAL;
-			/* send one valid process data to make outputs in slaves happy*/
-			ec_send_processdata();
-			ec_receive_processdata(EC_TIMEOUTRET);
-			/* request OP state for all slaves */
-			ec_writestate(0);
-	
-			chk = 40;
-			/* wait for all slaves to reach OP state */
-			printf("Starting PDO transfer\n");
+         printf("Request operational state for all slaves\n");
+         expectedWKC = (ec_group[0].outputsWKC * 2) + ec_group[0].inputsWKC;
+         printf("Calculated workcounter %d\n", expectedWKC);
+         ec_slave[0].state = EC_STATE_OPERATIONAL;
+         /* send one valid process data to make outputs in slaves happy*/
+         ec_send_processdata();
+         ec_receive_processdata(EC_TIMEOUTRET);
+         /* request OP state for all slaves */
+         ec_writestate(0);
+         chk = 40;
+         /* wait for all slaves to reach OP state */
+		 
+         do
+         {
+            ec_send_processdata();
+            ec_receive_processdata(EC_TIMEOUTRET);
+            ec_statecheck(0, EC_STATE_OPERATIONAL, 50000);
+         }
+         while (chk-- && (ec_slave[0].state != EC_STATE_OPERATIONAL));
+         if (ec_slave[0].state == EC_STATE_OPERATIONAL )
+         {
+            printf("Operational state reached for all slaves.\n");
 			pdo_transfer_active = TRUE;
-			do{
-			//ec_send_processdata();
-			//ec_receive_processdata(EC_TIMEOUTRET);
-			ec_statecheck(0, EC_STATE_OPERATIONAL, 50000);
-			}
-			while (chk-- && (ec_slave[0].state != EC_STATE_OPERATIONAL));
-
-			if (ec_slave[0].state != EC_STATE_OPERATIONAL ){
-				printf("Not all slaves reached operational state.\n");
-				ec_readstate();
-				for(i = 1; i<=ec_slavecount ; i++){
-					if(ec_slave[i].state != EC_STATE_OPERATIONAL){
-						printf("Slave %d State=0x%2.2x StatusCode=0x%4.4x : %s\n",
-						i, ec_slave[i].state, ec_slave[i].ALstatuscode, ec_ALstatuscode2string(ec_slave[i].ALstatuscode));
-					}	
-				}
-			}
-			else{
-				return TRUE;
-			}
-		}
-		else{
-			printf("No slaves found!\n");
-		}
-		/* stop SOEM, close socket */
-		ec_close();
-	}
-	else{
-		printf("No socket connection on %s\nExcecute as root\n",ifname);
-	}
-	return FALSE;
+            wkc_count = 0;
+            }
+            else
+            {
+                printf("Not all slaves reached operational state.\n");
+                ec_readstate();
+                for(i = 1; i<=ec_slavecount ; i++)
+                {
+                    if(ec_slave[i].state != EC_STATE_OPERATIONAL)
+                    {
+                        printf("Slave %d State=0x%2.2x StatusCode=0x%4.4x : %s\n",
+                            i, ec_slave[i].state, ec_slave[i].ALstatuscode, ec_ALstatuscode2string(ec_slave[i].ALstatuscode));
+                    }
+                }
+            }           
+        }
+        else
+        {
+            printf("No slaves found!\n");
+        }
+    }
+    else
+    {
+        printf("No socket connection on %s\nExcecute as root\n",ifname);
+    } 
 }
 
 void stop_ethercat()
@@ -169,8 +175,8 @@ void *ecat_pdotransfer(void *ptr){
 		if(pdo_transfer_active){
 			ec_send_processdata();
 			wkc = ec_receive_processdata(EC_TIMEOUTRET);
-			osal_usleep(PDO_PERIOD);
 		}
+		osal_usleep(PDO_PERIOD);
 	}
 }
 
