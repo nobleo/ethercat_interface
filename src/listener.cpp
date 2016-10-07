@@ -20,8 +20,6 @@ pthread_t thread_pdo;
 
 volatile int expectedWKC;
 volatile int wkc;
-boolean needlf;
-boolean inOP;
 
 boolean pdo_transfer_active = FALSE;
 
@@ -31,10 +29,6 @@ EL2008 digitalOut(&ec_slave[2]);
 boolean setup_ethercat(char *ifname)
 {
     int i, j, oloop, iloop, wkc_count, chk;
-    needlf = FALSE;
-    inOP = FALSE;
-
-   printf("Starting simple test\n");
    
    /* initialise SOEM, bind socket to ifname */
    if (ec_init(ifname))
@@ -144,20 +138,11 @@ void start_nobleo_bot(char *ifname)
 {
     int i,j, chk;
 	printf("declare\n");
-	int8_t value1;
-	int size_of_value1;
 	int workload1;
 	int8_t value2;
 	int size_of_value2;
 	int workload2;
-	printf("assign\n");
-	value1 = 0;
-	value2 = 0;
-	printf("slave wrappers\n");
-	
-	size_of_value1 = sizeof(value1);
-	size_of_value2 = sizeof(value2);
-	printf("Starting simple test\n");
+;
 
 	/* initialise SOEM and bring to operational state*/
 	if(setup_ethercat(ifname)){
@@ -298,25 +283,46 @@ int main(int argc, char **argv)
    */
   ros::Subscriber sub = n.subscribe("velocity_in", 1000, velocityCallback);
 
-   int iret1, iret2;
-   printf("SOEM (Simple Open EtherCAT Master)\nSimple test\n");
-   char ifname[] = "enxb827eb1cd0b8";
+  int iret1, iret2;
+  printf("SOEM (Simple Open EtherCAT Master)\n");
+  char ifname[] = "enxb827eb1cd0b8";
+
+  std::string ethercat_interface;
+  if (ros::param::get("/ethercat_interface", ethercat_interface))
+  {
+	printf("configured interface = %s\n",ethercat_interface.c_str());
+
+
+
 	iret1 = pthread_create(&thread_statecheck, NULL, ecat_statecheck, (void*) &ctime);
 	iret2 = pthread_create(&thread_pdo, NULL, ecat_pdotransfer, (void*) &ctime);
-		/* start cyclic part */
-	start_nobleo_bot(ifname);
 
-  /**
-   * ros::spin() will enter a loop, pumping callbacks.  With this version, all
-   * callbacks will be called from within this thread (the main one).  ros::spin()
-   * will exit when Ctrl-C is pressed, or the node is shutdown by the master.
-   */
-  ros::spin();
+	/* start cyclic part */
 
-		
-  pdo_transfer_active = FALSE;
-  printf("End simple test, close socket\n");
-  stop_ethercat();
+	char * interface = new char[ethercat_interface.size() + 1];
+	std::copy(ethercat_interface.begin(), ethercat_interface.end(), interface);
+	interface[ethercat_interface.size()] = '\0';
+
+	start_nobleo_bot(interface);
+
+	/**
+	* ros::spin() will enter a loop, pumping callbacks.  With this version, all
+	* callbacks will be called from within this thread (the main one).  ros::spin()
+	* will exit when Ctrl-C is pressed, or the node is shutdown by the master.
+	*/
+	ros::spin();
+
+
+	pdo_transfer_active = FALSE;
+	printf("End simple test, close socket\n");
+	stop_ethercat();
+  }
+  else
+  {
+	printf("no ethercat interface defined, EXIT");
+  }
+
+
 
   return 0;
 }
