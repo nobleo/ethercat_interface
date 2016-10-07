@@ -14,7 +14,7 @@ ros::Publisher pub;
 #define VMAX_LIN 0.5 // m/s
 #define VMAX_ROT (0.5*PI) // rad/s
 #define WHEELBASE 0.215 //m
-#define MOTORGAIN 20000 //m/s / DAC
+#define MOTORGAIN 26250 //m/s / DAC
 
 static inline float clamp(float value, float min, float max){
 	return (value>min)?((value<max)?value:max):min;
@@ -62,7 +62,7 @@ int main(int argc, char **argv)
    * You must call one of the versions of ros::init() before using any other
    * part of the ROS system.
    */
-  ros::init(argc, argv, "joy_teleop");
+  ros::init(argc, argv, "nobleo_bot_V0");
 
   /**
    * NodeHandle is the main access point to communications with the ROS system.
@@ -86,7 +86,7 @@ int main(int argc, char **argv)
    * is the number of messages that will be buffered up before beginning to throw
    * away the oldest ones.
    */
-  sub = n.subscribe("joy", 1000, joyCallback);
+  sub = n.subscribe("cmd_vel", 1000, joyCallback);
   pub = n.advertise<ethercat_demo::velocity_cmd>("velocity_in", 1000);
   /**
    * ros::spin() will enter a loop, pumping callbacks.  With this version, all
