@@ -4,30 +4,45 @@
 #include <unistd.h>
 
 #include "ros/ros.h"
-#include <sensor_msgs/Joy.h>
+#include <geometry_msgs/Twist.h>
 #include "ethercat_demo/velocity_cmd.h"
 
 ros::Subscriber sub;
 ros::Publisher pub;
 
+#define PI 3.14159
+#define VMAX_LIN 0.5 // m/s
+#define VMAX_ROT (0.5*PI) // rad/s
+#define WHEELBASE 0.215 //m
+#define MOTORGAIN 20000 //m/s / DAC
+
+static inline float clamp(float value, float min, float max){
+	return (value>min)?((value<max)?value:max):min;
+}
+
 /**
  * This tutorial demonstrates simple receipt of messages over the ROS system.
  */
-void joyCallback(const sensor_msgs::Joy::ConstPtr& msg)
+void joyCallback(const geometry_msgs::Twist::ConstPtr& msg)
 {
-  	ROS_INFO("I heard: [%f, %f]", msg->axes[1], msg->axes[4]);
-
     ethercat_demo::velocity_cmd velocity_msg;
-	float vr = msg->axes[0];
-	float vf = msg->axes[1];
+	float v_right, v_left, v_linear, v_angular;
+
+  	ROS_INFO("I heard: [%f, %f]", msg->linear.x, msg->angular.z);
+
+	v_linear = clamp(msg->linear.x, -VMAX_LIN, VMAX_LIN);
+	v_angular = clamp(msg->angular.z, -VMAX_ROT, VMAX_ROT);
+
+	v_right = v_linear + WHEELBASE*v_angular;
+	v_left  = v_linear - WHEELBASE*v_angular;
 
 	// two wheel, two joystick
 	//velocity_msg.velocity_left = msg->axes[1];
 	//velocity_msg.velocity_right = msg->axes[4];
 
 	// two wheel, one joystick
-	velocity_msg.velocity_left = vf-vr;
-	velocity_msg.velocity_right = vf+vr;
+	velocity_msg.velocity_left = MOTORGAIN*v_left;
+	velocity_msg.velocity_right = MOTORGAIN*v_right;
 
 
     pub.publish(velocity_msg);

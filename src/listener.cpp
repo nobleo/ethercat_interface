@@ -251,12 +251,13 @@ void velocityCallback(const ethercat_demo::velocity_cmd::ConstPtr& msg)
   	ROS_INFO("I heard: [%f, %f]", msg->velocity_left, msg->velocity_right);
 	float vl = msg->velocity_left;
 	float vr = msg->velocity_right;
-	
-	vl = (vl<1)?((vl>-1)?vl:-1):1;	
-	vr = (vr<1)?((vr>-1)?vr:-1):1;
+	float vmax = 12000;	
 
-	motordriver.set_velocity(0,-12000*vr);
-	motordriver.set_velocity(1, 12000*vl);
+	vl = (vl<vmax)?((vl>-vmax)?vl:-vmax):vmax;	
+	vr = (vr<vmax)?((vr>-vmax)?vr:-vmax):vmax;
+  	ROS_INFO("I do: [%f, %f]", vl, vr);
+	motordriver.set_velocity(0,-vr);
+	motordriver.set_velocity(1, vl);
 }
 
 int main(int argc, char **argv)
