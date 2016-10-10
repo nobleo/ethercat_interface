@@ -80,6 +80,7 @@ boolean setup_ethercat(char *ifname)
             {
                 printf("Operational state reached for all slaves.\n");
 			    pdo_transfer_active = TRUE;
+			    return TRUE;
             }
             else
             {
@@ -104,6 +105,7 @@ boolean setup_ethercat(char *ifname)
     {
         printf("No socket connection on %s\nExcecute as root\n",ifname);
     } 
+    return FALSE;
 }
 
 void stop_ethercat()
