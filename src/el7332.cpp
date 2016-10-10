@@ -1,7 +1,10 @@
 #include "ethercat_demo/el7332.h"
+#include "ethercat_demo/ethercat_includes.h"
 
-EL7332::EL7332(ec_slavet *slave){
+EL7332::EL7332(ec_slavet *slave, int slave_num){
 	ec_slave = slave;
+	slave_number = slave_num;
+
 }
 
 void EL7332::enable(uint8_t axis, boolean do_enable){
@@ -27,3 +30,16 @@ int16_t EL7332::get_velocity(uint8_t axis){
 	return *setpoint;
 }
 
+uint16_t EL7332::max_voltage()
+{
+	uint16_t voltage = 0;
+        int size_of_max_voltage = sizeof(voltage);
+	ec_SDOread(slave_number, 0x8010, 0x03, FALSE, &size_of_max_voltage, &voltage,EC_TIMEOUTRXM);
+	return voltage;
+}
+uint16_t EL7332::max_voltage(uint16_t voltage)
+{
+	int size_of_max_voltage = sizeof(voltage);
+	ec_SDOwrite(slave_number, 0x8010, 0x03, FALSE, size_of_max_voltage, &voltage,EC_TIMEOUTRXM);
+	return max_voltage();
+}

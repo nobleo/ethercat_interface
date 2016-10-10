@@ -23,12 +23,12 @@ volatile int wkc;
 
 boolean pdo_transfer_active = FALSE;
 
-EL7332 motordriver(&ec_slave[3]);
+EL7332 motordriver(&ec_slave[3],3);
 EL2008 digitalOut(&ec_slave[2]);
 
 boolean setup_ethercat(char *ifname)
 {
-    int i, j, oloop, iloop, wkc_count, chk;
+    int i, j, chk;
    
    /* initialise SOEM, bind socket to ifname */
    if (ec_init(ifname))
@@ -45,22 +45,13 @@ boolean setup_ethercat(char *ifname)
 
          ec_configdc();
 
-		/* write configuration parameters for motor driver */
-		printf("before pointer declaration\n");			
-		uint16_t value, value3;
-		uint16_t *pValue;
-		pValue = &value3;
-		int size_of_value;
-		int workcounter;
-		value = 12000;
-		value3 = 999;
-		size_of_value = sizeof(value);
-		printf("before sdo read\n");
-		workcounter = ec_SDOwrite(3, 0x8010, 0x03, FALSE, size_of_value, &value,EC_TIMEOUTRXM);
-		printf("write workcounter = %d\n",workcounter);
-		workcounter = ec_SDOread(3, 0x8010, 0x03, FALSE, &size_of_value, pValue,EC_TIMEOUTRXM);
-		printf("read workcounter = %d\n",workcounter);
-		printf("Value  = %d (%d bytes)\n",value3, size_of_value);
+	 /* write configuration parameters for motor driver */
+	 uint16_t max_voltage = 12000;
+	 uint16_t max_voltage_received;
+
+	 max_voltage_received = motordriver.max_voltage(max_voltage);
+
+	 printf("Written value %d, Received value %d\n", max_voltage, max_voltage_received);
 
 
          printf("Slaves mapped, state to SAFE_OP.\n");
@@ -92,7 +83,6 @@ boolean setup_ethercat(char *ifname)
          {
             printf("Operational state reached for all slaves.\n");
 			pdo_transfer_active = TRUE;
-            wkc_count = 0;
             }
             else
             {
