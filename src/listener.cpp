@@ -8,9 +8,10 @@
 #include "ethercat_demo/ethercat_includes.h"
 
 #include "ethercat_demo/velocity_cmd.h"
-#include "ethercat_demo/distance.h"
 #include "ethercat_demo/el7332.h"
 #include "ethercat_demo/el2008.h"
+
+#include "ultrasonic_sensor_interface/distance.h"
 
 #define EC_TIMEOUTMON 500
 #define PDO_PERIOD 5000
@@ -26,6 +27,9 @@ boolean pdo_transfer_active = FALSE;
 
 EL7332 motordriver(&ec_slave[3],3);
 EL2008 digitalOut(&ec_slave[2]);
+
+int sensor1distance, sensor2distance;
+boolean stop = FALSE;
 
 boolean setup_ethercat(char *ifname)
 {
@@ -238,13 +242,27 @@ void velocityCallback(const ethercat_demo::velocity_cmd::ConstPtr& msg)
 	motordriver.set_velocity(1, vl);
 }
 
-void distanceCallback(const ethercat_demo::distance::ConstPtr& msg)
+void distanceCallback(const ultrasonic_sensor_interface::distance::ConstPtr& msg)
 {
-    if(msg->distance < 1000) //obstacle within 1 meter
+    switch(msg->id)
     {
+        case 1:
+            sensor1distance = msg->distance;
+            break;
+        case 2:
+            sensor2distance = msg->distance;
+            break;
+        default:
+            printf("unsuported sensor data from sensor with id: %d\r\n",msg->id);
+            break;
+    }
+    if(sensor1distance < 1000 || sensor2distance < 1000) //obstacle within 1 meter
+    {
+        stop = TRUE;
     }
     else
     {
+        stop = FALSE;
     }
 }
 

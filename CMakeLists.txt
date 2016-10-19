@@ -2,10 +2,10 @@ cmake_minimum_required(VERSION 2.8.3)
 project(ethercat_demo)
 
 ## Find catkin and any catkin packages
-find_package(catkin REQUIRED COMPONENTS roscpp rospy std_msgs message_generation ethercat_soem)
+find_package(catkin REQUIRED COMPONENTS roscpp rospy std_msgs message_generation ethercat_soem ultrasonic_sensor_interface)
 
 ## Declare ROS messages and services
-add_message_files(FILES velocity_cmd.msg distance.msg)
+add_message_files(FILES velocity_cmd.msg)
 #add_service_files(FILES AddTwoInts.srv)
 
 ## Generate added messages and services
