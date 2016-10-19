@@ -5,7 +5,7 @@ project(ethercat_demo)
 find_package(catkin REQUIRED COMPONENTS roscpp rospy std_msgs message_generation ethercat_soem)
 
 ## Declare ROS messages and services
-add_message_files(FILES velocity_cmd.msg)
+add_message_files(FILES velocity_cmd.msg distance.msg)
 #add_service_files(FILES AddTwoInts.srv)
 
 ## Generate added messages and services

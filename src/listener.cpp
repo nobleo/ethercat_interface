@@ -8,6 +8,7 @@
 #include "ethercat_demo/ethercat_includes.h"
 
 #include "ethercat_demo/velocity_cmd.h"
+#include "ethercat_demo/distance.h"
 #include "ethercat_demo/el7332.h"
 #include "ethercat_demo/el2008.h"
 
@@ -125,13 +126,6 @@ void stop_ethercat()
 
 void start_nobleo_bot(char *ifname)
 {
-    int i,j, chk;
-	printf("declare\n");
-	int workload1;
-	int8_t value2;
-	int size_of_value2;
-	int workload2;
-
 	/* initialise SOEM and bring to operational state*/
 	if(setup_ethercat(ifname))
 	{
@@ -239,9 +233,19 @@ void velocityCallback(const ethercat_demo::velocity_cmd::ConstPtr& msg)
 
 	vl = (vl<vmax)?((vl>-vmax)?vl:-vmax):vmax;	
 	vr = (vr<vmax)?((vr>-vmax)?vr:-vmax):vmax;
-  	ROS_INFO("I do: [%f, %f]", vl, vr);
+
 	motordriver.set_velocity(0,-vr);
 	motordriver.set_velocity(1, vl);
+}
+
+void distanceCallback(const ethercat_demo::distance::ConstPtr& msg)
+{
+    if(msg->distance < 1000) //obstacle within 1 meter
+    {
+    }
+    else
+    {
+    }
 }
 
 int main(int argc, char **argv)
@@ -250,7 +254,9 @@ int main(int argc, char **argv)
 
     ros::NodeHandle n;
 
-    ros::Subscriber sub = n.subscribe("velocity_in", 1000, velocityCallback);
+    ros::Subscriber velocity_sub = n.subscribe("velocity_in", 1000, velocityCallback);
+    
+    ros::Subscriber distance_sub = n.subscribe("distance", 1000, distanceCallback);
 
     std::string ethercat_interface;
     if (ros::param::get("/ethercat_interface", ethercat_interface))
