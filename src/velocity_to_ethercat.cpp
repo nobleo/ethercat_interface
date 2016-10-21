@@ -241,7 +241,7 @@ void velocityCallback(const ethercat_demo::velocity_cmd::ConstPtr& msg)
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "listener");
+    ros::init(argc, argv, "velocity_to_ethercat");
 
     ros::NodeHandle n;
 

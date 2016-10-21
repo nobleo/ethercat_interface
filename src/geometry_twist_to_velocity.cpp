@@ -23,7 +23,7 @@ static inline float clamp(float value, float min, float max){
 /**
  * This tutorial demonstrates simple receipt of messages over the ROS system.
  */
-void velocityAnnaCallback(const geometry_msgs::Twist::ConstPtr& msg)
+void geometryTwistCallback(const geometry_msgs::Twist::ConstPtr& msg)
 {
     ethercat_demo::velocity_cmd velocity_msg;
 	float v_right, v_left, v_linear, v_angular;
@@ -86,7 +86,7 @@ int main(int argc, char **argv)
    * is the number of messages that will be buffered up before beginning to throw
    * away the oldest ones.
    */
-  sub = n.subscribe("velocity_anna", 1000, velocityAnnaCallback);
+  sub = n.subscribe("velocity_anna", 1000, geometryTwistCallback);
   pub = n.advertise<ethercat_demo::velocity_cmd>("velocity_in", 1000);
   /**
    * ros::spin() will enter a loop, pumping callbacks.  With this version, all

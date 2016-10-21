@@ -17,8 +17,8 @@ catkin_package(CATKIN_DEPENDS message_runtime)
 ## Build talker and listener
 include_directories(include ${catkin_INCLUDE_DIRS})
 
-add_executable(listener src/listener.cpp src/el2008.cpp src/el7332.cpp)
-target_link_libraries(listener ${catkin_LIBRARIES})
+add_executable(velocity_to_ethercat src/velocity_to_ethercat.cpp src/el2008.cpp src/el7332.cpp)
+target_link_libraries(velocity_to_ethercat ${catkin_LIBRARIES})
 
-add_executable(nobleo_bot_V0 src/nobleo_bot_V0.cpp)
-target_link_libraries(nobleo_bot_V0 ${catkin_LIBRARIES})
+add_executable(geometry_twist_to_velocity src/geometry_twist_to_velocity.cpp)
+target_link_libraries(geometry_twist_to_velocity ${catkin_LIBRARIES})
