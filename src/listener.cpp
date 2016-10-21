@@ -28,9 +28,6 @@ boolean pdo_transfer_active = FALSE;
 EL7332 motordriver(&ec_slave[3],3);
 EL2008 digitalOut(&ec_slave[2]);
 
-int sensor1distance, sensor2distance;
-boolean stop = FALSE;
-
 boolean setup_ethercat(char *ifname)
 {
     int i, j, chk;
@@ -242,30 +239,6 @@ void velocityCallback(const ethercat_demo::velocity_cmd::ConstPtr& msg)
 	motordriver.set_velocity(1, vl);
 }
 
-void distanceCallback(const ultrasonic_sensor_interface::distance::ConstPtr& msg)
-{
-    switch(msg->id)
-    {
-        case 1:
-            sensor1distance = msg->distance;
-            break;
-        case 2:
-            sensor2distance = msg->distance;
-            break;
-        default:
-            printf("unsuported sensor data from sensor with id: %d\r\n",msg->id);
-            break;
-    }
-    if(sensor1distance < 1000 || sensor2distance < 1000) //obstacle within 1 meter
-    {
-        stop = TRUE;
-    }
-    else
-    {
-        stop = FALSE;
-    }
-}
-
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "listener");
@@ -273,8 +246,6 @@ int main(int argc, char **argv)
     ros::NodeHandle n;
 
     ros::Subscriber velocity_sub = n.subscribe("velocity_in", 1000, velocityCallback);
-    
-    ros::Subscriber distance_sub = n.subscribe("distance", 1000, distanceCallback);
 
     std::string ethercat_interface;
     if (ros::param::get("/ethercat_interface", ethercat_interface))
