@@ -237,6 +237,7 @@ void velocityCallback(const ethercat_demo::velocity_cmd::ConstPtr& msg)
 
 	motordriver.set_velocity(0,-vr);
 	motordriver.set_velocity(1, vl);
+	digitalOut.toggle_output(0);
 }
 
 int main(int argc, char **argv)
