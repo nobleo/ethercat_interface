@@ -19,4 +19,9 @@ add_executable(velocity_to_ethercat src/velocity_to_ethercat.cpp src/el2008.cpp 
 target_link_libraries(velocity_to_ethercat ${catkin_LIBRARIES})
 
 add_executable(geometry_twist_to_velocity src/geometry_twist_to_velocity.cpp)
+
+add_dependencies(geometry_twist_to_velocity ethercat_demo_generate_messages_cpp)
+
 target_link_libraries(geometry_twist_to_velocity ${catkin_LIBRARIES})
+
+
