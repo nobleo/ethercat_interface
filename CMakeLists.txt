@@ -6,7 +6,6 @@ find_package(catkin REQUIRED COMPONENTS roscpp rospy std_msgs message_generation
 
 ## Declare ROS messages and services
 add_message_files(FILES velocity_cmd.msg)
-#add_service_files(FILES AddTwoInts.srv)
 
 ## Generate added messages and services
 generate_messages(DEPENDENCIES std_msgs)
@@ -14,7 +13,6 @@ generate_messages(DEPENDENCIES std_msgs)
 ## Declare a catkin package
 catkin_package(CATKIN_DEPENDS message_runtime)
 
-## Build talker and listener
 include_directories(include ${catkin_INCLUDE_DIRS})
 
 add_executable(velocity_to_ethercat src/velocity_to_ethercat.cpp src/el2008.cpp src/el7332.cpp)
