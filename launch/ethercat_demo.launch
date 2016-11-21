@@ -1,7 +1,8 @@
 <launch>
 
 <rosparam command="load" file="$(find ethercat_demo)/param/ethercat_demo.yaml" />
-<param name="ethercat_interface" type="string" value="enxb827eb1cd0b8" />
+<param name="ethercat_interface" type="string" value="eth0" />
+<node name="velocity_to_ethercat" pkg="ethercat_demo" type="velocity_to_ethercat" />
 
 <node name="joy_node" pkg="joy" type="joy_node" />
 <node name="joy_teleop" pkg="joy_teleop" type="joy_teleop.py" />

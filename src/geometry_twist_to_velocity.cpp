@@ -86,7 +86,7 @@ int main(int argc, char **argv)
    * is the number of messages that will be buffered up before beginning to throw
    * away the oldest ones.
    */
-  sub = n.subscribe("velocity_anna", 1000, geometryTwistCallback);
+  sub = n.subscribe("cmd_vel", 1000, geometryTwistCallback);
   pub = n.advertise<ethercat_demo::velocity_cmd>("velocity_in", 1000);
   /**
    * ros::spin() will enter a loop, pumping callbacks.  With this version, all
