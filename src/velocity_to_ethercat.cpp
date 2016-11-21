@@ -11,7 +11,7 @@
 #include "ethercat_demo/el7332.h"
 #include "ethercat_demo/el2008.h"
 
-#include "ultrasonic_sensor_interface/distance.h"
+#include "sensor_msgs/Range.h"
 
 #define EC_TIMEOUTMON 500
 #define PDO_PERIOD 5000
