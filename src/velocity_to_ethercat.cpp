@@ -246,7 +246,7 @@ int main(int argc, char **argv)
 
     ros::NodeHandle n;
 
-    ros::Subscriber velocity_sub = n.subscribe("velocity_in", 1000, velocityCallback);
+    ros::Subscriber velocity_sub = n.subscribe("velocity_in", 1, velocityCallback);
 
     std::string ethercat_interface;
     if (ros::param::get("/ethercat_interface", ethercat_interface))
