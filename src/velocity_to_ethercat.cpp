@@ -37,12 +37,12 @@ boolean setup_ethercat(char *ifname)
     /* initialise SOEM, bind socket to ifname */
     if (ec_init(ifname))
     {   
-        ROS_INFO("ec_init on %s succeeded.\n",ifname);
+        ROS_INFO("ec_init on %s succeeded.",ifname);
         /* find and auto-config slaves */
 
         if ( ec_config_init(FALSE) > 0 )
         {
-            ROS_INFO("%d slaves found and configured.\n",ec_slavecount);
+            ROS_INFO("%d slaves found and configured.",ec_slavecount);
 
             ec_config_map(&IOmap);
 
@@ -52,18 +52,18 @@ boolean setup_ethercat(char *ifname)
 	        uint16_t max_voltage = 12000;
 	        uint16_t max_voltage_received;
             max_voltage_received = motordriver.max_voltage(max_voltage);
-          ROS_INFO("Written value %d, Received value %d\n", max_voltage, max_voltage_received);
+          ROS_INFO("Written value %d, Received value %d", max_voltage, max_voltage_received);
 
 
-            ROS_INFO("Slaves mapped, state to SAFE_OP.\n");
+            ROS_INFO("Slaves mapped, state to SAFE_OP.");
             /* wait for all slaves to reach SAFE_OP state */
             ec_statecheck(0, EC_STATE_SAFE_OP,  EC_TIMEOUTSTATE * 4);
 
-            ROS_INFO("segments : %d : %d %d %d %d\n",ec_group[0].nsegments ,ec_group[0].IOsegment[0],ec_group[0].IOsegment[1],ec_group[0].IOsegment[2],ec_group[0].IOsegment[3]);
+            ROS_INFO("segments : %d : %d %d %d %d",ec_group[0].nsegments ,ec_group[0].IOsegment[0],ec_group[0].IOsegment[1],ec_group[0].IOsegment[2],ec_group[0].IOsegment[3]);
 
-            ROS_INFO("Request operational state for all slaves\n");
+            ROS_INFO("Request operational state for all slaves");
             expectedWKC = (ec_group[0].outputsWKC * 2) + ec_group[0].inputsWKC;
-            ROS_INFO("Calculated workcounter %d\n", expectedWKC);
+            ROS_INFO("Calculated workcounter %d", expectedWKC);
             ec_slave[0].state = EC_STATE_OPERATIONAL;
             /* send one valid process data to make outputs in slaves happy*/
             ec_send_processdata();
@@ -82,19 +82,19 @@ boolean setup_ethercat(char *ifname)
             while (chk-- && (ec_slave[0].state != EC_STATE_OPERATIONAL));
             if (ec_slave[0].state == EC_STATE_OPERATIONAL )
             {
-                ROS_INFO("Operational state reached for all slaves.\n");
+                ROS_INFO("Operational state reached for all slaves.");
 			    pdo_transfer_active = TRUE;
 			    return TRUE;
             }
             else
             {
-                ROS_WARN("Not all slaves reached operational state.\n");
+                ROS_WARN("Not all slaves reached operational state.");
                 ec_readstate();
                 for(i = 1; i<=ec_slavecount ; i++)
                 {
                     if(ec_slave[i].state != EC_STATE_OPERATIONAL)
                     {
-                        ROS_WARN("Slave %d State=0x%2.2x StatusCode=0x%4.4x : %s\n",
+                        ROS_WARN("Slave %d State=0x%2.2x StatusCode=0x%4.4x : %s",
                             i, ec_slave[i].state, ec_slave[i].ALstatuscode, ec_ALstatuscode2string(ec_slave[i].ALstatuscode));
                     }
                 }
@@ -102,12 +102,12 @@ boolean setup_ethercat(char *ifname)
         }
         else
         {
-            ROS_ERROR("No slaves found!\n");
+            ROS_ERROR("No slaves found!");
         }
     }
     else
     {
-        ROS_ERROR("No socket connection on %s\nExcecute run the following command: sudo setcap cap_net_raw+ep %s\n",ifname,argv[0]);
+        ROS_ERROR("No socket connection on %s. Try excecuting the following command: sudo setcap cap_net_raw+ep %s\n",ifname,argv[0]);
     } 
     return FALSE;
 }
@@ -118,7 +118,7 @@ void stop_ethercat()
 		pdo_transfer_active = FALSE;
 
 		/* request INIT state for all slaves */
-    ROS_INFO("\nRequest init state for all slaves\n");
+    ROS_INFO("Request init state for all slaves");
 		ec_slave[0].state = EC_STATE_INIT;
 		ec_writestate(0);
 
@@ -137,7 +137,7 @@ void start_nobleo_bot(char *ifname)
 	}
 	else
 	{
-    ROS_ERROR("Initialization failed\n");
+    ROS_ERROR("Initialization failed");
 	}
 }
 
@@ -172,13 +172,13 @@ void *ecat_statecheck( void *ptr )
 					ec_group[currentgroup].docheckstate = TRUE;
 					if (ec_slave[slave].state == (EC_STATE_SAFE_OP + EC_STATE_ERROR))
 					{
-            ROS_ERROR("ERROR : slave %d is in SAFE_OP + ERROR, attempting ack.\n", slave);
+            ROS_ERROR("ERROR : slave %d is in SAFE_OP + ERROR, attempting ack.", slave);
 						ec_slave[slave].state = (EC_STATE_SAFE_OP + EC_STATE_ACK);
 						ec_writestate(slave);
 					}
 					else if(ec_slave[slave].state == EC_STATE_SAFE_OP)
 					{
-            ROS_WARN("slave %d is in SAFE_OP, change to OPERATIONAL.\n", slave);
+            ROS_WARN("slave %d is in SAFE_OP, change to OPERATIONAL.", slave);
 						ec_slave[slave].state = EC_STATE_OPERATIONAL;
 						ec_writestate(slave);
 					}
@@ -187,7 +187,7 @@ void *ecat_statecheck( void *ptr )
 						if (ec_reconfig_slave(slave, EC_TIMEOUTMON))
 						{
 							ec_slave[slave].islost = FALSE;
-              ROS_INFO("MESSAGE : slave %d reconfigured\n",slave);
+              ROS_INFO("MESSAGE : slave %d reconfigured",slave);
 						}
 					}
 					else if(!ec_slave[slave].islost)
@@ -197,7 +197,7 @@ void *ecat_statecheck( void *ptr )
 						if (!ec_slave[slave].state)
 						{
 							ec_slave[slave].islost = TRUE;
-              ROS_ERROR("slave %d lost\n",slave);
+              ROS_ERROR("slave %d lost",slave);
 						}
 					}
 				}
@@ -208,19 +208,19 @@ void *ecat_statecheck( void *ptr )
 						if(ec_recover_slave(slave, EC_TIMEOUTMON))
 						{
 							ec_slave[slave].islost = FALSE;
-              ROS_INFO("MESSAGE : slave %d recovered\n",slave);
+              ROS_INFO("MESSAGE : slave %d recovered",slave);
 						}
 					}
 					else
 					{
 						ec_slave[slave].islost = FALSE;
-            ROS_INFO("MESSAGE : slave %d found\n",slave);
+            ROS_INFO("MESSAGE : slave %d found",slave);
 					}
 				}
 			}
 
 			if(!ec_group[currentgroup].docheckstate){
-        ROS_INFO("OK : all slaves resumed OPERATIONAL.\n");
+        ROS_INFO("OK : all slaves resumed OPERATIONAL.");
 			}
 		}
 		osal_usleep(10000);
@@ -256,7 +256,7 @@ int main(int argc, char **argv)
     std::string ethercat_interface;
     if (ros::param::get("/ethercat_interface", ethercat_interface))
     {
-        ROS_INFO("configured interface = %s\n",ethercat_interface.c_str());
+        ROS_INFO("configured interface = %s",ethercat_interface.c_str());
 
         pthread_create(&thread_statecheck, NULL, ecat_statecheck, (void*) &ctime);
         pthread_create(&thread_pdo, NULL, ecat_pdotransfer, (void*) &ctime);
@@ -271,10 +271,10 @@ int main(int argc, char **argv)
 
         ros::spin();
         
-        ROS_INFO("stop transferring messages\n");
+        ROS_INFO("stop transferring messages");
         pdo_transfer_active = FALSE;
 
-        ROS_INFO("stop ethercat\n");
+        ROS_INFO("stop ethercat");
         stop_ethercat();
     }
     else
