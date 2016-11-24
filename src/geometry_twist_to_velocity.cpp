@@ -5,7 +5,7 @@
 
 #include "ros/ros.h"
 #include <geometry_msgs/Twist.h>
-#include "ethercat_demo/velocity_cmd.h"
+#include "ethercat_interface/velocity_cmd.h"
 
 ros::Subscriber sub;
 ros::Publisher pub;
@@ -25,7 +25,7 @@ static inline float clamp(float value, float min, float max){
  */
 void geometryTwistCallback(const geometry_msgs::Twist::ConstPtr& msg)
 {
-    ethercat_demo::velocity_cmd velocity_msg;
+    ethercat_interface::velocity_cmd velocity_msg;
 	float v_right, v_left, v_linear, v_angular;
 
   	ROS_INFO("I heard: [%f, %f]", msg->linear.x, msg->angular.z);
@@ -87,7 +87,7 @@ int main(int argc, char **argv)
    * away the oldest ones.
    */
   sub = n.subscribe("cmd_vel", 1000, geometryTwistCallback);
-  pub = n.advertise<ethercat_demo::velocity_cmd>("velocity_in", 1000);
+  pub = n.advertise<ethercat_interface::velocity_cmd>("velocity_in", 1000);
   /**
    * ros::spin() will enter a loop, pumping callbacks.  With this version, all
    * callbacks will be called from within this thread (the main one).  ros::spin()

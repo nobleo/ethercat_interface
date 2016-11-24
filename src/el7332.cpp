@@ -1,5 +1,5 @@
-#include "ethercat_demo/el7332.h"
-#include "ethercat_demo/ethercat_includes.h"
+#include "ethercat_interface/el7332.h"
+#include "ethercat_interface/ethercat_includes.h"
 
 EL7332::EL7332(ec_slavet *slave, int slave_num){
 	ec_slave = slave;

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(ethercat_demo)
+project(ethercat_interface)
 
 ## Find catkin and any catkin packages
 find_package(catkin REQUIRED COMPONENTS roscpp rospy std_msgs message_generation ethercat_soem sensor_msgs)

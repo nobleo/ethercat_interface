@@ -5,11 +5,11 @@
 
 #include "ros/ros.h"
 
-#include "ethercat_demo/ethercat_includes.h"
+#include "ethercat_interface/ethercat_includes.h"
 
-#include "ethercat_demo/velocity_cmd.h"
-#include "ethercat_demo/el7332.h"
-#include "ethercat_demo/el2008.h"
+#include "ethercat_interface/velocity_cmd.h"
+#include "ethercat_interface/el7332.h"
+#include "ethercat_interface/el2008.h"
 
 #include "sensor_msgs/Range.h"
 
@@ -225,7 +225,7 @@ void *ecat_statecheck( void *ptr )
 	}
 }
 
-void velocityCallback(const ethercat_demo::velocity_cmd::ConstPtr& msg)
+void velocityCallback(const ethercat_interface::velocity_cmd::ConstPtr& msg)
 {
   	//ROS_INFO("I heard: [%f, %f]", msg->velocity_left, msg->velocity_right);
 	float vl = msg->velocity_left;

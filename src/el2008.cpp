@@ -1,4 +1,4 @@
-#include "ethercat_demo/el2008.h"
+#include "ethercat_interface/el2008.h"
 
 EL2008::EL2008(ec_slavet *slave){
 	ec_slave = slave;
