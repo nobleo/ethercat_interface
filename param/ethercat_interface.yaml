@@ -1,3 +1,5 @@
+ethercat_interface: eth0
+
 teleop:
     move:
         type: topic
