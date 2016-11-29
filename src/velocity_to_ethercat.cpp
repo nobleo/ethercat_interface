@@ -127,7 +127,7 @@ void stop_ethercat()
 }
 
 
-void start_nobleo_bot(char *ifname)
+void start_nobleobot(char *ifname)
 {
 	/* initialise SOEM and bring to operational state*/
 	if(setup_ethercat(ifname))
@@ -267,7 +267,7 @@ int main(int argc, char **argv)
         std::copy(ethercat_interface.begin(), ethercat_interface.end(), interface);
         interface[ethercat_interface.size()] = '\0';
 
-        start_nobleo_bot(interface);
+        start_nobleobot(interface);
 
         ros::spin();
         

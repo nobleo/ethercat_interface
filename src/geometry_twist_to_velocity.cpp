@@ -62,7 +62,7 @@ int main(int argc, char **argv)
    * You must call one of the versions of ros::init() before using any other
    * part of the ROS system.
    */
-  ros::init(argc, argv, "nobleo_bot_V0");
+  ros::init(argc, argv, "nobleobot_V0");
 
   /**
    * NodeHandle is the main access point to communications with the ROS system.
