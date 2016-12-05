@@ -20,7 +20,7 @@ target_link_libraries(velocity_to_ethercat ${catkin_LIBRARIES})
 
 add_executable(geometry_twist_to_velocity src/geometry_twist_to_velocity.cpp)
 
-add_dependencies(geometry_twist_to_velocity ethercat_demo_generate_messages_cpp)
+add_dependencies(geometry_twist_to_velocity ethercat_interface_generate_messages_cpp)
 
 target_link_libraries(geometry_twist_to_velocity ${catkin_LIBRARIES})
 
