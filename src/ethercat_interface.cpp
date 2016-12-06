@@ -20,6 +20,7 @@
 
 #define EC_TIMEOUTMON 500
 #define PDO_PERIOD 5000
+#define MOTORGAIN 26250
 
 char IOmap[4096];
 pthread_t thread_statecheck;
@@ -239,78 +240,32 @@ void* ecat_statecheck(void* ptr)
   }
 }
 
-/*void velocityCallback(const ethercat_interface::velocity_cmd::ConstPtr& msg)
-{
-  // ROS_INFO("I heard: [%f, %f]", msg->velocity_left, msg->velocity_right);
-  float vl = msg->velocity_left;
-  float vr = msg->velocity_right;
-  float vmax = 12000;
-
-  vl = (vl < vmax) ? ((vl > -vmax) ? vl : -vmax) : vmax;
-  vr = (vr < vmax) ? ((vr > -vmax) ? vr : -vmax) : vmax;
-
-  motordriver.set_velocity(0, -vr);
-  motordriver.set_velocity(1, vl);
-  digitalOut.toggle_output(0);
-}*/
-
-static const size_t fake_computation = 100000;
-
 EthercatHardware::EthercatHardware()
 {
-  std::vector< std::string > joint_names;
-  joint_names.push_back( "left_wheel_joint" );
-  joint_names.push_back( "right_wheel_joint" );
-
-  // init to make a diff
-  pos[0] = 1.5f;
-  pos[1] = 2.5f;
+  std::vector<std::string> joint_names;
+  joint_names.push_back("right_wheel_joint");
+  joint_names.push_back("left_wheel_joint");
 
   for (size_t i = 0; i < joint_names.size(); ++i)
   {
     // connect and register the joint state interface
-    hardware_interface::JointStateHandle state_handle(joint_names[i], &pos[i], &vel[i], &eff[i]);
+    hardware_interface::JointStateHandle state_handle(joint_names[i], &pos[i],
+                                                      &vel[i], &eff[i]);
     jnt_state_interface.registerHandle(state_handle);
 
-    // connect and register the joint position interface
-    hardware_interface::JointHandle pos_handle(jnt_state_interface.getHandle(joint_names[i]), &cmd[i]);
-    jnt_pos_interface.registerHandle(pos_handle);
-
     // connect and register the joint velocity interface
-    hardware_interface::JointHandle vel_handle(jnt_state_interface.getHandle(joint_names[i]), &cmd[i]);
+    hardware_interface::JointHandle vel_handle(
+        jnt_state_interface.getHandle(joint_names[i]), &cmd[i]);
     jnt_vel_interface.registerHandle(vel_handle);
   }
 
-  registerInterface(&jnt_state_interface);
-  registerInterface(&jnt_pos_interface);
   registerInterface(&jnt_vel_interface);
-}
-
-void EthercatHardware::readJoints()
-{
-  for (size_t i = 0; i < fake_computation; ++i)
-  {
-    1+1;
-  }
-
-  ROS_INFO_STREAM("*****read*******");
-  ROS_INFO_STREAM("pos0 :" << pos[0] );
-  ROS_INFO_STREAM("vel0 :" << vel[0] );
-  ROS_DEBUG("I just computed read joints");
 }
 
 void EthercatHardware::writeJoints()
 {
-  for (size_t i = 0; i< fake_computation; ++i)
-  {
-    2+2;
-  }
-  ROS_INFO_STREAM("*****write*******");
-  ROS_INFO_STREAM("cmd0: " << cmd[0] );
-  ROS_DEBUG("I just computed write joints");
-
-  motordriver.set_velocity(0, -cmd[0]);
-  motordriver.set_velocity(1, cmd[1]);
+  motordriver.set_velocity(0, -cmd[0] * MOTORGAIN);
+  motordriver.set_velocity(1, cmd[1] * MOTORGAIN);
   digitalOut.toggle_output(0);
 }
 
@@ -319,16 +274,16 @@ int main(int argc, char** argv)
   ros::init(argc, argv, "ethercat_interface");
 
   EthercatHardware robot;
-  controller_manager::ControllerManager cm( &robot );
+  controller_manager::ControllerManager cm(&robot);
 
-  ros::AsyncSpinner spinner( 1 );
+  ros::AsyncSpinner spinner(1);
   spinner.start();
 
   int freq = 10; // in Hz
 
   ros::NodeHandle nh;
-  nh.param<int>( "freq", freq, freq );
-  ros::Rate r( freq );
+  nh.param<int>("freq", freq, freq);
+  ros::Rate r(freq);
 
   std::string ethercat_interface;
   if (ros::param::get("/ethercat_interface", ethercat_interface))
@@ -346,13 +301,13 @@ int main(int argc, char** argv)
 
     start_nobleobot(interface);
 
-    while( ros::ok() )
+    while (ros::ok())
     {
       ros::Time t = ros::Time::now();
 
-      //robot.readJoints();
+      // robot.readJoints();
 
-      cm.update( t, ros::Duration(1.0f/freq) );
+      cm.update(t, ros::Duration(1.0f / freq));
 
       robot.writeJoints();
 
