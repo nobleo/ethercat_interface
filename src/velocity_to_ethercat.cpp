@@ -7,11 +7,15 @@
 
 #include "ethercat_interface/ethercat_includes.h"
 
-#include "ethercat_interface/velocity_cmd.h"
 #include "ethercat_interface/el7332.h"
 #include "ethercat_interface/el2008.h"
 
 #include "sensor_msgs/Range.h"
+
+#include <hardware_interface/joint_command_interface.h>
+#include <hardware_interface/joint_state_interface.h>
+#include <hardware_interface/robot_hw.h>
+#include <controller_manager/controller_manager.h>
 
 #define EC_TIMEOUTMON 500
 #define PDO_PERIOD 5000
@@ -28,7 +32,38 @@ boolean pdo_transfer_active = FALSE;
 EL7332 motordriver(&ec_slave[3],3);
 EL2008 digitalOut(&ec_slave[2]);
 
-char **argv;
+class MyRobot : public hardware_interface::RobotHW
+{
+public:
+  MyRobot()
+  {
+    // connect and register the joint state interface
+    hardware_interface::JointStateHandle state_handle_a("A", &pos[0], &vel[0], &eff[0]);
+    jnt_state_interface.registerHandle(state_handle_a);
+
+    hardware_interface::JointStateHandle state_handle_b("B", &pos[1], &vel[1], &eff[1]);
+    jnt_state_interface.registerHandle(state_handle_b);
+
+    registerInterface(&jnt_state_interface);
+
+    // connect and register the joint velocity interface
+    hardware_interface::JointHandle vel_handle_a(jnt_state_interface.getHandle("A"), &cmd[0]);
+    jnt_vel_interface.registerHandle(vel_handle_a);
+
+    hardware_interface::JointHandle vel_handle_b(jnt_state_interface.getHandle("B"), &cmd[1]);
+    jnt_vel_interface.registerHandle(vel_handle_b);
+
+    registerInterface(&jnt_vel_interface);
+  }
+
+private:
+  hardware_interface::JointStateInterface jnt_state_interface;
+  hardware_interface::VelocityJointInterface jnt_vel_interface;
+  double cmd[2];
+  double pos[2];
+  double vel[2];
+  double eff[2];
+};
 
 boolean setup_ethercat(char *ifname)
 {
@@ -107,7 +142,7 @@ boolean setup_ethercat(char *ifname)
     }
     else
     {
-        ROS_ERROR("No socket connection on %s. Try excecuting the following command: sudo setcap cap_net_raw+ep $(readlink $(catkin_find ethercat_interface velocity_to_ethercat))\n",ifname,argv[0]);
+        ROS_ERROR("No socket connection on %s. Try excecuting the following command: sudo setcap cap_net_raw+ep $(readlink $(catkin_find ethercat_interface velocity_to_ethercat))\n",ifname);
     } 
     return FALSE;
 }
@@ -143,7 +178,7 @@ void start_nobleobot(char *ifname)
 
 void *ecat_pdotransfer(void *ptr){
 	while(1)
-	{
+  {
 		if(pdo_transfer_active)
 		{
 			ec_send_processdata();
@@ -227,7 +262,7 @@ void *ecat_statecheck( void *ptr )
 	}
 }
 
-void velocityCallback(const ethercat_interface::velocity_cmd::ConstPtr& msg)
+/*void velocityCallback(const ethercat_interface::velocity_cmd::ConstPtr& msg)
 {
   	//ROS_INFO("I heard: [%f, %f]", msg->velocity_left, msg->velocity_right);
 	float vl = msg->velocity_left;
@@ -240,18 +275,16 @@ void velocityCallback(const ethercat_interface::velocity_cmd::ConstPtr& msg)
 	motordriver.set_velocity(0,-vr);
 	motordriver.set_velocity(1, vl);
 	digitalOut.toggle_output(0);
-}
+}*/
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "velocity_to_ethercat");
+    ros::init(argc, argv, "ethercat_interface");
 
     ros::NodeHandle n;
 
-    ros::Subscriber velocity_sub = n.subscribe("velocity_in", 1, velocityCallback);
-
-    // Safe argv for later use in error messages
-    ::argv = argv;
+    MyRobot robot;
+    controller_manager::ControllerManager cm(&robot);
 
     std::string ethercat_interface;
     if (ros::param::get("/ethercat_interface", ethercat_interface))

@@ -8,7 +8,7 @@
 
   <license>TODO</license>
 
-  <!-- <url type="website">http://wiki.ros.org/ethercat_demo</url> -->
+  <!-- <url type="website">http://wiki.ros.org/ethercat_interface</url> -->
 
   <author email="joost.groenen@nobleo.nl">Joost Groenen</author>
 
@@ -17,9 +17,10 @@
   <depend>roscpp</depend>
   <depend>ethercat_soem</depend>
   <depend>std_msgs</depend>
-  <depend>geometry_msgs</depend>
   <depend>message_generation</depend>
   <depend>message_runtime</depend>
   <depend>sensor_msgs</depend>
+  <depend>hardware_interface</depend>
+  <depend>controller_manager</depend>
 
 </package>

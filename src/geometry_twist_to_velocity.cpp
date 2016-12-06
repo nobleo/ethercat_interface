@@ -4,96 +4,97 @@
 #include <unistd.h>
 
 #include "ros/ros.h"
-#include <geometry_msgs/Twist.h>
 #include "ethercat_interface/velocity_cmd.h"
 
-ros::Subscriber sub;
-ros::Publisher pub;
+#include <hardware_interface/joint_command_interface.h>
+#include <hardware_interface/joint_state_interface.h>
+#include <hardware_interface/robot_hw.h>
+#include <controller_manager/controller_manager.h>
+
+class MyRobot : public hardware_interface::RobotHW
+{
+public:
+  MyRobot()
+  {
+    ros::NodeHandle n;
+
+    // connect and register the joint state interface
+    hardware_interface::JointStateHandle state_handle_a("A", &pos[0], &vel[0],
+                                                        &eff[0]);
+    jnt_state_interface.registerHandle(state_handle_a);
+
+    hardware_interface::JointStateHandle state_handle_b("B", &pos[1], &vel[1],
+                                                        &eff[1]);
+    jnt_state_interface.registerHandle(state_handle_b);
+
+    registerInterface(&jnt_state_interface);
+
+    // connect and register the joint position interface
+    hardware_interface::JointHandle pos_handle_a(
+        jnt_state_interface.getHandle("A"), &cmd[0]);
+    jnt_pos_interface.registerHandle(pos_handle_a);
+
+    hardware_interface::JointHandle pos_handle_b(
+        jnt_state_interface.getHandle("B"), &cmd[1]);
+    jnt_pos_interface.registerHandle(pos_handle_b);
+
+    registerInterface(&jnt_pos_interface);
+
+    pub = n.advertise<ethercat_interface::velocity_cmd>("velocity_in", 1);
+  }
+
+  void write(void);
+
+private:
+  ros::Publisher pub;
+  hardware_interface::JointStateInterface jnt_state_interface;
+  hardware_interface::PositionJointInterface jnt_pos_interface;
+  double cmd[2];
+  double pos[2];
+  double vel[2];
+  double eff[2];
+  static const int MOTORGAIN = 26250; // m/s / DAC
+};
+
+void MyRobot::write(void)
+{
+  ethercat_interface::velocity_cmd velocity_msg;
+
+  float v_right = cmd[0];
+  float v_left = cmd[1];
+
+  velocity_msg.velocity_left = MOTORGAIN * v_left;
+  velocity_msg.velocity_right = MOTORGAIN * v_right;
+
+  pub.publish(velocity_msg);
+}
 
 #define PI 3.14159
-#define VMAX_LIN 0.5 // m/s
-#define VMAX_ROT (0.5*PI) // rad/s
-#define WHEELBASE 0.215 //m
-#define MOTORGAIN 26250 //m/s / DAC
+#define VMAX_LIN 0.5        // m/s
+#define VMAX_ROT (0.5 * PI) // rad/s
+#define WHEELBASE 0.215     // m
 
-static inline float clamp(float value, float min, float max){
-	return (value>min)?((value<max)?value:max):min;
+static inline float clamp(float value, float min, float max)
+{
+  return (value > min) ? ((value < max) ? value : max) : min;
 }
 
-/**
- * This tutorial demonstrates simple receipt of messages over the ROS system.
- */
-void geometryTwistCallback(const geometry_msgs::Twist::ConstPtr& msg)
+int main(int argc, char** argv)
 {
-    ethercat_interface::velocity_cmd velocity_msg;
-	float v_right, v_left, v_linear, v_angular;
 
-  	ROS_INFO("I heard: [%f, %f]", msg->linear.x, msg->angular.z);
+  ros::init(argc, argv, "hardware_interface");
 
-	v_linear = clamp(msg->linear.x, -VMAX_LIN, VMAX_LIN);
-	v_angular = clamp(msg->angular.z, -VMAX_ROT, VMAX_ROT);
+  MyRobot robot;
+  controller_manager::ControllerManager cm(&robot);
 
-	v_right = v_linear + WHEELBASE*v_angular;
-	v_left  = v_linear - WHEELBASE*v_angular;
+  ros::Rate r(10);
 
-	// two wheel, two joystick
-	//velocity_msg.velocity_left = msg->axes[1];
-	//velocity_msg.velocity_right = msg->axes[4];
-
-	// two wheel, one joystick
-	velocity_msg.velocity_left = MOTORGAIN*v_left;
-	velocity_msg.velocity_right = MOTORGAIN*v_right;
-
-
-    pub.publish(velocity_msg);
-}
-
-
-
-int main(int argc, char **argv)
-{
-  /**
-   * The ros::init() function needs to see argc and argv so that it can perform
-   * any ROS arguments and name remapping that were provided at the command line.
-   * For programmatic remappings you can use a different version of init() which takes
-   * remappings directly, but for most command-line programs, passing argc and argv is
-   * the easiest way to do it.  The third argument to init() is the name of the node.
-   *
-   * You must call one of the versions of ros::init() before using any other
-   * part of the ROS system.
-   */
-  ros::init(argc, argv, "nobleobot_V0");
-
-  /**
-   * NodeHandle is the main access point to communications with the ROS system.
-   * The first NodeHandle constructed will fully initialize this node, and the last
-   * NodeHandle destructed will close down the node.
-   */
-  ros::NodeHandle n;
-
-  /**
-   * The subscribe() call is how you tell ROS that you want to receive messages
-   * on a given topic.  This invokes a call to the ROS
-   * master node, which keeps a registry of who is publishing and who
-   * is subscribing.  Messages are passed to a callback function, here
-   * called chatterCallback.  subscribe() returns a Subscriber object that you
-   * must hold on to until you want to unsubscribe.  When all copies of the Subscriber
-   * object go out of scope, this callback will automatically be unsubscribed from
-   * this topic.
-   *
-   * The second parameter to the subscribe() function is the size of the message
-   * queue.  If messages are arriving faster than they are being processed, this
-   * is the number of messages that will be buffered up before beginning to throw
-   * away the oldest ones.
-   */
-  sub = n.subscribe("cmd_vel", 1000, geometryTwistCallback);
-  pub = n.advertise<ethercat_interface::velocity_cmd>("velocity_in", 1000);
-  /**
-   * ros::spin() will enter a loop, pumping callbacks.  With this version, all
-   * callbacks will be called from within this thread (the main one).  ros::spin()
-   * will exit when Ctrl-C is pressed, or the node is shutdown by the master.
-   */
-  ros::spin();
+  while (ros::ok())
+  {
+    cm.update(ros::Time::now(), r.cycleTime());
+    robot.write();
+    r.sleep();
+  }
 
   return 0;
 }
