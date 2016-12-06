@@ -93,6 +93,7 @@ int main(int argc, char** argv)
   {
     cm.update(ros::Time::now(), r.cycleTime());
     robot.write();
+    ros::spinOnce();
     r.sleep();
   }
 
