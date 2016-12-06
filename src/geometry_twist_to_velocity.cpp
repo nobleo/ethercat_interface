@@ -29,16 +29,16 @@ public:
 
     registerInterface(&jnt_state_interface);
 
-    // connect and register the joint position interface
-    hardware_interface::JointHandle pos_handle_a(
+    // connect and register the joint velocity interface
+    hardware_interface::JointHandle vel_handle_a(
         jnt_state_interface.getHandle("A"), &cmd[0]);
-    jnt_pos_interface.registerHandle(pos_handle_a);
+    jnt_vel_interface.registerHandle(vel_handle_a);
 
-    hardware_interface::JointHandle pos_handle_b(
+    hardware_interface::JointHandle vel_handle_b(
         jnt_state_interface.getHandle("B"), &cmd[1]);
-    jnt_pos_interface.registerHandle(pos_handle_b);
+    jnt_vel_interface.registerHandle(vel_handle_b);
 
-    registerInterface(&jnt_pos_interface);
+    registerInterface(&jnt_vel_interface);
 
     pub = n.advertise<ethercat_interface::velocity_cmd>("velocity_in", 1);
   }
@@ -48,7 +48,7 @@ public:
 private:
   ros::Publisher pub;
   hardware_interface::JointStateInterface jnt_state_interface;
-  hardware_interface::PositionJointInterface jnt_pos_interface;
+  hardware_interface::VelocityJointInterface jnt_vel_interface;
   double cmd[2];
   double pos[2];
   double vel[2];
