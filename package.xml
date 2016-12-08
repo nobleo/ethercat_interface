@@ -8,18 +8,15 @@
 
   <license>TODO</license>
 
-  <!-- <url type="website">http://wiki.ros.org/ethercat_interface</url> -->
-
+  <!-- EtherCAT part: -->
   <author email="joost.groenen@nobleo.nl">Joost Groenen</author>
+  <!-- Ros control part: -->
+  <author email="tim.clephas@nobleo.nl">Tim Clephas</author>
 
   <buildtool_depend>catkin</buildtool_depend>
 
   <depend>roscpp</depend>
   <depend>ethercat_soem</depend>
-  <depend>std_msgs</depend>
-  <depend>message_generation</depend>
-  <depend>message_runtime</depend>
-  <depend>sensor_msgs</depend>
   <depend>hardware_interface</depend>
   <depend>controller_manager</depend>
 

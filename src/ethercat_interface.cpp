@@ -11,8 +11,6 @@
 #include "ethercat_interface/el7332.h"
 #include "ethercat_interface/el2008.h"
 
-#include "sensor_msgs/Range.h"
-
 #include <hardware_interface/joint_command_interface.h>
 #include <hardware_interface/joint_state_interface.h>
 #include <hardware_interface/robot_hw.h>
