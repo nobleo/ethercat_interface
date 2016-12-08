@@ -262,6 +262,7 @@ EthercatHardware::EthercatHardware()
 
 void EthercatHardware::writeJoints()
 {
+  ROS_DEBUG("Left velocity: %f Right velocity: %f", cmd[0], cmd[1]);
   motordriver.set_velocity(0, -cmd[0] * MOTORGAIN);
   motordriver.set_velocity(1, cmd[1] * MOTORGAIN);
   digitalOut.toggle_output(0);
