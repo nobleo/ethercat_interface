@@ -113,7 +113,7 @@ boolean setup_ethercat(char* ifname)
   {
     ROS_ERROR("No socket connection on %s. Try excecuting the following "
               "command: sudo setcap cap_net_raw+ep $(readlink $(catkin_find "
-              "ethercat_interface velocity_to_ethercat))\n",
+              "ethercat_interface ethercat_interface))\n",
               ifname);
   }
   return FALSE;
