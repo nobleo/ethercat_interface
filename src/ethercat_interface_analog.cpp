@@ -6,10 +6,10 @@
 #include "ros/ros.h"
 
 #include "ethercat_interface/ethercat_includes.h"
-#include "ethercat_interface/ethercat_interface.h"
+#include "ethercat_interface/ethercat_interface_analog.h"
 
-#include "ethercat_interface/el7332.h"
 #include "ethercat_interface/el2008.h"
+#include "ethercat_interface/el4002.h"
 
 #include <hardware_interface/joint_command_interface.h>
 #include <hardware_interface/joint_state_interface.h>
@@ -18,7 +18,7 @@
 
 #define EC_TIMEOUTMON 500
 #define PDO_PERIOD 5000
-#define MOTORGAIN 26250
+#define MOTORGAIN 0.5
 
 char IOmap[4096];
 pthread_t thread_statecheck;
@@ -29,8 +29,8 @@ volatile int wkc;
 
 boolean pdo_transfer_active = FALSE;
 
-EL7332 motordriver(&ec_slave[3], 3);
 EL2008 digitalOut(&ec_slave[2]);
+EL4002 analogOut(&ec_slave[4]);
 
 boolean setup_ethercat(char* ifname)
 {
@@ -49,13 +49,6 @@ boolean setup_ethercat(char* ifname)
       ec_config_map(&IOmap);
 
       ec_configdc();
-
-      /* write configuration parameters for motor driver */
-      uint16_t max_voltage = 12000;
-      uint16_t max_voltage_received;
-      max_voltage_received = motordriver.max_voltage(max_voltage);
-      ROS_INFO("Written value %d, Received value %d", max_voltage,
-               max_voltage_received);
 
       ROS_INFO("Slaves mapped, state to SAFE_OP.");
       /* wait for all slaves to reach SAFE_OP state */
@@ -113,7 +106,7 @@ boolean setup_ethercat(char* ifname)
   {
     ROS_ERROR("No socket connection on %s. Try excecuting the following "
               "command: sudo setcap cap_net_raw+ep $(readlink $(catkin_find "
-              "ethercat_interface ethercat_interface))\n",
+              "ethercat_interface ethercat_interface_analog))\n",
               ifname);
   }
   return FALSE;
@@ -138,8 +131,7 @@ void start_nobleobot(char* ifname)
   /* initialise SOEM and bring to operational state*/
   if (setup_ethercat(ifname))
   {
-    motordriver.enable(0, TRUE);
-    motordriver.enable(1, TRUE);
+    ROS_INFO("Initialization succeeded");
   }
   else
   {
@@ -262,9 +254,11 @@ EthercatHardware::EthercatHardware()
 
 void EthercatHardware::writeJoints()
 {
-  ROS_DEBUG("Left velocity: %f Right velocity: %f", cmd[0], cmd[1]);
-  motordriver.set_velocity(0, -cmd[0] * MOTORGAIN);
-  motordriver.set_velocity(1, cmd[1] * MOTORGAIN);
+  ROS_WARN("Left velocity: %f Right velocity: %f", cmd[0] * MOTORGAIN, cmd[1] * MOTORGAIN);
+  //motordriver.set_velocity(0, -cmd[0] * MOTORGAIN);
+  //motordriver.set_velocity(1, cmd[1] * MOTORGAIN);
+  analogOut.set_output(0, cmd[0] * MOTORGAIN);
+  analogOut.set_output(1, cmd[1] * MOTORGAIN);
   digitalOut.toggle_output(0);
 }
 
@@ -299,6 +293,8 @@ int main(int argc, char** argv)
     interface[ethercat_interface.size()] = '\0';
 
     start_nobleobot(interface);
+
+    ROS_WARN("Sending analog outs:");
 
     while (ros::ok())
     {
