@@ -10,6 +10,7 @@
 
 #include "ethercat_interface/el7332.h"
 #include "ethercat_interface/el2008.h"
+#include "ethercat_interface/el4002.h"
 
 #include <hardware_interface/joint_command_interface.h>
 #include <hardware_interface/joint_state_interface.h>
@@ -31,6 +32,7 @@ boolean pdo_transfer_active = FALSE;
 
 EL7332 motordriver(&ec_slave[3], 3);
 EL2008 digitalOut(&ec_slave[2]);
+EL4002 analogOut(&ec_slave[4]);
 
 boolean setup_ethercat(char* ifname)
 {
@@ -262,9 +264,14 @@ EthercatHardware::EthercatHardware()
 
 void EthercatHardware::writeJoints()
 {
-  ROS_DEBUG("Left velocity: %f Right velocity: %f", cmd[0], cmd[1]);
-  motordriver.set_velocity(0, -cmd[0] * MOTORGAIN);
-  motordriver.set_velocity(1, cmd[1] * MOTORGAIN);
+  ROS_WARN("Left velocity: %f Right velocity: %f", cmd[0], cmd[1]);
+  //motordriver.set_velocity(0, -cmd[0] * MOTORGAIN);
+  //motordriver.set_velocity(1, cmd[1] * MOTORGAIN);
+  ROS_INFO("Setting analog out 0");
+  analogOut.set_output(0, 8);
+  ROS_INFO("Setting analog out 1");
+  analogOut.set_output(1, 4);
+  ROS_INFO("Setting dital out 0");
   digitalOut.toggle_output(0);
 }
 
@@ -274,6 +281,8 @@ int main(int argc, char** argv)
 
   EthercatHardware robot;
   controller_manager::ControllerManager cm(&robot);
+
+  ROS_INFO("HALLOOO");
 
   ros::AsyncSpinner spinner(1);
   spinner.start();
@@ -300,15 +309,20 @@ int main(int argc, char** argv)
 
     start_nobleobot(interface);
 
+    ROS_WARN("Sending analog outs:");
+
+    analogOut.set_output(0, 8);
+    analogOut.set_output(1, 4);
+
     while (ros::ok())
     {
       ros::Time t = ros::Time::now();
 
       // robot.readJoints();
 
-      cm.update(t, ros::Duration(1.0f / freq));
+      //cm.update(t, ros::Duration(1.0f / freq));
 
-      robot.writeJoints();
+      //robot.writeJoints();
 
       r.sleep();
     }
