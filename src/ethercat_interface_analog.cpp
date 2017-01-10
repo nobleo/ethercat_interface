@@ -239,17 +239,18 @@ EthercatHardware::EthercatHardware()
   for (size_t i = 0; i < joint_names.size(); ++i)
   {
     // connect and register the joint state interface
-    hardware_interface::JointStateHandle state_handle(joint_names[i], &pos[i],
-                                                      &vel[i], &eff[i]);
+    hardware_interface::JointStateHandle state_handle(joint_names[i], &pos[i], &vel[i], &eff[i]);
     jnt_state_interface.registerHandle(state_handle);
 
+    registerInterface(&jnt_state_interface);
+
     // connect and register the joint velocity interface
-    hardware_interface::JointHandle vel_handle(
-        jnt_state_interface.getHandle(joint_names[i]), &cmd[i]);
+    hardware_interface::JointHandle vel_handle(jnt_state_interface.getHandle(joint_names[i]), &cmd[i]);
     jnt_vel_interface.registerHandle(vel_handle);
+
+    registerInterface(&jnt_vel_interface);
   }
 
-  registerInterface(&jnt_vel_interface);
 }
 
 void EthercatHardware::writeJoints()
