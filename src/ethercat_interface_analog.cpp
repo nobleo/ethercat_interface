@@ -29,8 +29,8 @@ volatile int wkc;
 
 boolean pdo_transfer_active = FALSE;
 
-EL2008 digitalOut(&ec_slave[2]);
-EL4002 analogOut(&ec_slave[4]);
+EL2008 digitalOut(&ec_slave[3]);
+EL4002 analogOut(&ec_slave[2]);
 
 boolean setup_ethercat(char* ifname)
 {
@@ -233,8 +233,8 @@ void* ecat_statecheck(void* ptr)
 EthercatHardware::EthercatHardware()
 {
   std::vector<std::string> joint_names;
-  joint_names.push_back("right_wheel_joint");
-  joint_names.push_back("left_wheel_joint");
+  joint_names.push_back("right_wheel");
+  joint_names.push_back("left_wheel");
 
   for (size_t i = 0; i < joint_names.size(); ++i)
   {
