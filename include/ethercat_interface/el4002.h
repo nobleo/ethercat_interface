@@ -9,6 +9,7 @@ class EL4002{
 public:
     EL4002(ec_slavet *slave);
     int16_t volt2dac(double value);
+    double dac2volt(int16_t dac_value);
     void set_output(uint8_t output_nr, double value);
     double get_output(uint8_t output_nr);
 };

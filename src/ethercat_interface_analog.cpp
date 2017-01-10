@@ -233,8 +233,8 @@ void* ecat_statecheck(void* ptr)
 EthercatHardware::EthercatHardware()
 {
   std::vector<std::string> joint_names;
-  joint_names.push_back("right_wheel");
   joint_names.push_back("left_wheel");
+  joint_names.push_back("right_wheel");
 
   for (size_t i = 0; i < joint_names.size(); ++i)
   {
@@ -254,12 +254,27 @@ EthercatHardware::EthercatHardware()
 
 void EthercatHardware::writeJoints()
 {
-  ROS_WARN("Left velocity: %f Right velocity: %f", cmd[0] * MOTORGAIN, cmd[1] * MOTORGAIN);
-  //motordriver.set_velocity(0, -cmd[0] * MOTORGAIN);
-  //motordriver.set_velocity(1, cmd[1] * MOTORGAIN);
-  analogOut.set_output(0, cmd[0] * MOTORGAIN);
-  analogOut.set_output(1, cmd[1] * MOTORGAIN);
-  digitalOut.toggle_output(0);
+  double analog_values[2] = { cmd[0] * MOTORGAIN, cmd[1] * MOTORGAIN };
+
+  // Sanitizing input
+  if ( std::abs(analog_values[0]) > 10)
+  {
+    ROS_WARN("Analog value [0] has a value of %f, truncating to 10",analog_values[0]);
+    analog_values[0] = std::min(10.0,std::max(-10.0,analog_values[0]));
+  }
+  if ( std::abs(analog_values[1]) > 10)
+  {
+    ROS_WARN("Analog value [1] has a value of %f, truncating to 10",analog_values[1]);
+    analog_values[1] = std::min(10.0,std::max(-10.0,analog_values[1]));
+  }
+
+  // Enabling motor and writing analog values and direction boolean
+  digitalOut.set_output(0,std::abs(analog_values[0]) > 1e-5 || std::abs(analog_values[1]) > 1e-5); // enable or disable motor
+  digitalOut.set_output(2,analog_values[0] > 0.0); // move in the right direction
+  digitalOut.set_output(4,analog_values[1] <= 0.0);
+  analogOut.set_output(0, std::abs(analog_values[0])); // With this value
+  analogOut.set_output(1, std::abs(analog_values[1]));
+  ROS_DEBUG( "Digital = [%d, %d, %d], Analog = [%f, %f]", digitalOut.get_output(0), digitalOut.get_output(2), digitalOut.get_output(4), std::abs(analog_values[0]), std::abs(analog_values[1]) );
 }
 
 int main(int argc, char** argv)
@@ -272,7 +287,7 @@ int main(int argc, char** argv)
   ros::AsyncSpinner spinner(1);
   spinner.start();
 
-  int freq = 10; // in Hz
+  int freq = 50; // in Hz
 
   ros::NodeHandle nh;
   nh.param<int>("freq", freq, freq);
@@ -293,8 +308,6 @@ int main(int argc, char** argv)
     interface[ethercat_interface.size()] = '\0';
 
     start_nobleobot(interface);
-
-    ROS_WARN("Sending analog outs:");
 
     while (ros::ok())
     {
