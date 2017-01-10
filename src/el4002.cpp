@@ -21,7 +21,7 @@ void EL4002::set_output(uint8_t output_nr, double value){
   //2 bytes per output
   int16_t *setpoint = (int16_t *)&(ec_slave->outputs[2*output_nr]);
   *setpoint = (int16_t) volt2dac(value);
-  std::cout << "setpoint = volt2dac = " << volt2dac(value) << std::endl;
+  //std::cout << "setpoint = volt2dac = " << volt2dac(value) << std::endl;
 
   //std::cout << (int16_t) ec_slave->outputs[0] << " - "  << (int16_t) ec_slave->outputs[1] << " - "  << (int16_t) ec_slave->outputs[2] << " - "  << (int16_t) ec_slave->outputs[3] << std::endl;
 }
