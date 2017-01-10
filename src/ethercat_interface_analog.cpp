@@ -295,7 +295,7 @@ int main(int argc, char** argv)
   ros::Rate r(freq);
 
   std::string ethercat_interface;
-  if (ros::param::get("/ethercat_interface", ethercat_interface))
+  if (ros::param::get("ethercat_interface", ethercat_interface))
   {
     ROS_INFO("configured interface = %s", ethercat_interface.c_str());
 
