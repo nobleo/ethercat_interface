@@ -18,7 +18,7 @@
 
 #define EC_TIMEOUTMON 500
 #define PDO_PERIOD 5000
-#define MOTORGAIN 0.5
+#define MOTORGAIN 0.97237 // (65/7/60*2*pi)    [V/rad/s]
 
 char IOmap[4096];
 pthread_t thread_statecheck;
@@ -288,7 +288,7 @@ int main(int argc, char** argv)
   ros::AsyncSpinner spinner(1);
   spinner.start();
 
-  int freq = 100; // in Hz
+  int freq = 50; // in Hz
 
   ros::NodeHandle nh;
   nh.param<int>("freq", freq, freq);
