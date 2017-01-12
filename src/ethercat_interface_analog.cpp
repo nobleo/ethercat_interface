@@ -18,7 +18,7 @@
 
 #define EC_TIMEOUTMON 500
 #define PDO_PERIOD 5000
-#define MOTORGAIN 0.97237 // (65/7/60*2*pi)    [V/rad/s]
+#define MOTORGAIN 0.334 // 1/(200/7/60*2*pi)    [V/rad/s]
 
 char IOmap[4096];
 pthread_t thread_statecheck;
