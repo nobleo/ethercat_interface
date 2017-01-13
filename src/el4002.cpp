@@ -6,8 +6,12 @@ EL4002::EL4002(ec_slavet *slave){
 }
 
 int16_t EL4002::volt2dac(double value){
-  //convert voltage setpoint to 16 bits dac value
-  int16_t dac_setpoint = (int16_t) value*(1<<15)/10;
+  // 10V = 32767 2^15-1
+  //  0V = 16 = 2^4
+
+  //convert voltage setpoint to 16 bits dac value, Last one and first three bits not used
+  int16_t dac_setpoint = value*(1<<15)/10;
+
   return dac_setpoint;
 }
 
