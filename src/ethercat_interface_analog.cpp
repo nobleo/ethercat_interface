@@ -256,7 +256,7 @@ EthercatHardware::EthercatHardware()
 void EthercatHardware::writeJoints()
 {
   double analog_values[2] = { cmd[0] * MOTORGAIN, cmd[1] * MOTORGAIN };
-
+  
   // Sanitizing input
   if ( std::abs(analog_values[0]) > 10)
   {
@@ -270,7 +270,8 @@ void EthercatHardware::writeJoints()
   }
 
   // Enabling motor and writing analog values and direction boolean
-  digitalOut.set_output(0,std::abs(analog_values[0]) > 1e-5 || std::abs(analog_values[1]) > 1e-5); // enable or disable motor
+  digitalOut.set_output(3,std::abs(analog_values[0]) < 1e-5);
+  digitalOut.set_output(5,std::abs(analog_values[1]) < 1e-5);
   digitalOut.set_output(2,analog_values[0] > 0.0); // move in the right direction
   digitalOut.set_output(4,analog_values[1] <= 0.0);
   analogOut.set_output(0, std::abs(analog_values[0])); // With this value
@@ -310,6 +311,8 @@ int main(int argc, char** argv)
 
     start_nobleobot(interface);
 
+    digitalOut.set_output(0,true); // Enable motors
+
     while (ros::ok())
     {
       ros::Time t = ros::Time::now();
@@ -322,6 +325,8 @@ int main(int argc, char** argv)
 
       r.sleep();
     }
+
+    digitalOut.set_output(0,false); // Disable motors
 
     ROS_INFO("stop transferring messages");
     pdo_transfer_active = FALSE;
