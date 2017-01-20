@@ -1,24 +1,20 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(ethercat_demo)
+project(ethercat_interface)
 
 ## Find catkin and any catkin packages
-find_package(catkin REQUIRED COMPONENTS roscpp rospy std_msgs message_generation ethercat_soem ultrasonic_sensor_interface)
-
-## Declare ROS messages and services
-add_message_files(FILES velocity_cmd.msg)
-#add_service_files(FILES AddTwoInts.srv)
-
-## Generate added messages and services
-generate_messages(DEPENDENCIES std_msgs)
+find_package(catkin REQUIRED COMPONENTS
+  roscpp
+  ethercat_soem
+  hardware_interface
+  controller_manager)
 
 ## Declare a catkin package
-catkin_package(CATKIN_DEPENDS message_runtime)
+catkin_package(CATKIN_DEPENDS)
 
-## Build talker and listener
 include_directories(include ${catkin_INCLUDE_DIRS})
 
-add_executable(velocity_to_ethercat src/velocity_to_ethercat.cpp src/el2008.cpp src/el7332.cpp)
-target_link_libraries(velocity_to_ethercat ${catkin_LIBRARIES})
+add_executable(ethercat_interface src/ethercat_interface.cpp src/el2008.cpp src/el7332.cpp)
+target_link_libraries(ethercat_interface ${catkin_LIBRARIES})
 
-add_executable(geometry_twist_to_velocity src/geometry_twist_to_velocity.cpp)
-target_link_libraries(geometry_twist_to_velocity ${catkin_LIBRARIES})
+add_executable(ethercat_interface_analog src/ethercat_interface_analog.cpp src/el2008.cpp src/el4002.cpp)
+target_link_libraries(ethercat_interface_analog ${catkin_LIBRARIES})

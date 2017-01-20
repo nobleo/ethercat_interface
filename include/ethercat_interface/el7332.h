@@ -1,7 +1,7 @@
 #ifndef __EL7332_H
 #define __EL7332_H
 
-#include "ethercat_demo/ethercat_includes.h"
+#include "ethercat_interface/ethercat_includes.h"
 
 class EL7332{
 	private:
