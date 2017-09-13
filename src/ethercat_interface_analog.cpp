@@ -289,7 +289,7 @@ int main(int argc, char** argv)
   ros::AsyncSpinner spinner(1);
   spinner.start();
 
-  int freq = 50; // in Hz
+  int freq = 30; // in Hz
 
   ros::NodeHandle nh;
   nh.param<int>("freq", freq, freq);
