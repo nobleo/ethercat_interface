@@ -1,0 +1,21 @@
+# This is a build configuration nobleo-env
+image:
+  name: timple/nobleo-env:develop
+  username: $DOCKER_HUB_USERNAME
+  password: $DOCKER_HUB_PASSWORD
+
+pipelines:
+  default:
+    - step:
+        script:
+          - ROSPACKAGE=$BITBUCKET_REPO_SLUG
+          # Copy source code in the correct place
+          - PACKAGEPATH=~/ros/kinetic/system/src/$ROSPACKAGE
+          - mkdir -p $PACKAGEPATH && cp -rv * $PACKAGEPATH
+          # Perform an install of the dependencies
+          - sudo apt-get update -qq
+          - source /home/noblean/.bashrc
+          - nobleo-get install ros-$ROSPACKAGE
+          # Build the package
+          - cd $PACKAGEPATH
+          - catkin build --this --no-status
