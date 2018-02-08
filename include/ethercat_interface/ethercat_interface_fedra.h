@@ -7,6 +7,8 @@ class EthercatHardware : public hardware_interface::RobotHW
 public:
   EthercatHardware();
 
+  void readPivots();
+
   void readJoints();
 
   void writeJoints();

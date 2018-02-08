@@ -6,9 +6,11 @@
 #include "ros/ros.h"
 
 #include "ethercat_interface/ethercat_includes.h"
-#include "ethercat_interface/ethercat_interface.h"
+#include "ethercat_interface/ethercat_interface_fedra.h"
 
+#include "ethercat_interface/el2008.h"
 #include "ethercat_interface/el2502.h"
+#include "ethercat_interface/el5002.h"
 
 #include <hardware_interface/joint_command_interface.h>
 #include <hardware_interface/joint_state_interface.h>
@@ -30,6 +32,11 @@ boolean pdo_transfer_active = FALSE;
 #define PWM_PRES_MODE 1
 #define PWM_PERIOD_US 1000
 EL2502 pwmdriver(&ec_slave[4],4);
+EL2008 digitalOut(&ec_slave[3]);
+#define GRAYCODE 1
+#define MULTITURN 1
+#define PIVOT_ENC_RES 8192
+EL5002 pivot1(&ec_slave[2],2);
 
 boolean setup_ethercat(char* ifname)
 {
@@ -50,6 +57,7 @@ boolean setup_ethercat(char* ifname)
       ec_configdc();
 
       pwmdriver.write_config(PWM_PRES_MODE, PWM_PERIOD_US);
+      pivot1.write_config(GRAYCODE,MULTITURN);
       uint8_t pres; uint16_t per;
       pwmdriver.read_config(&pres, &per);
       ROS_INFO("Written values %d, %d, Received values %d, %d", PWM_PRES_MODE, PWM_PERIOD_US, pres, per);
@@ -252,11 +260,40 @@ EthercatHardware::EthercatHardware()
   }
 }
 
+void EthercatHardware::readPivots()
+{
+  uint32_t chan1,chan2;
+  double q1,q2;
+  pivot1.get_inputs(&chan1,&chan2);
+  q1 = ((double)chan1)/PIVOT_ENC_RES*2*M_PI;
+  q2 = ((double)chan2)/PIVOT_ENC_RES*2*M_PI;
+  ROS_DEBUG("Pivot1 Encs: %d %d  Rot: %g %g",chan1,chan2,q1,q2);
+}
+
+void EthercatHardware::readJoints()
+{
+
+}
+
 void EthercatHardware::writeJoints()
 {
   ROS_DEBUG("Left velocity: %f Right velocity: %f", cmd[0], cmd[1]);
-  pwmdriver.set_output(0, -cmd[0]);
-  pwmdriver.set_output(1,  cmd[1]);
+  // Set direction bits and send pwm values to drivers
+  if (cmd[0]<0){
+    digitalOut.set_output(0,1);
+    pwmdriver.set_output(0, -cmd[0]);
+  }else{
+    digitalOut.set_output(0,0);
+    pwmdriver.set_output(0, cmd[0]);
+  }
+
+  if (cmd[1]<0){
+    digitalOut.set_output(1,1);
+    pwmdriver.set_output(1, -cmd[1]);
+  }else{
+    digitalOut.set_output(1,0);
+    pwmdriver.set_output(1, cmd[1]);
+  }
 }
 
 int main(int argc, char** argv)
@@ -290,6 +327,10 @@ int main(int argc, char** argv)
 
     start_nobleobot(interface);
 
+    /* Enable motor drivers */
+    digitalOut.set_output(2,1);
+    digitalOut.set_output(3,1);
+
     while (ros::ok())
     {
       ros::Time t = ros::Time::now();
@@ -301,6 +342,10 @@ int main(int argc, char** argv)
 
       r.sleep();
     }
+
+    /* Enable motor drivers */
+    digitalOut.set_output(2,0);
+    digitalOut.set_output(3,0);
 
     ROS_INFO("stop transferring messages");
     pdo_transfer_active = FALSE;

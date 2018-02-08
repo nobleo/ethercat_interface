@@ -11,12 +11,12 @@ EL2502::EL2502(ec_slavet *slave, int slave_num){
 }
 
 void EL2502::set_output(uint8_t output_nr, double dutycycle){
-  int16_t *dc_value = (int16_t *)&(ec_slave->outputs[2*output_nr]);
-  *dc_value =  (int16_t) (dutycycle*pwm_res);
+  uint16_t *dc_value = (uint16_t *)&(ec_slave->outputs[2*output_nr]);
+  *dc_value =  (uint16_t) (dutycycle*pwm_res);
 }
 
 double EL2502::get_output(uint8_t output_nr){
-  int16_t *dc_value = (int16_t *)&(ec_slave->outputs[2*output_nr]);
+  uint16_t *dc_value = (uint16_t *)&(ec_slave->outputs[2*output_nr]);
   return ((double)*dc_value)/((double)pwm_res);
 }
 
