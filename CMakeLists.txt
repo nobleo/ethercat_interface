@@ -1,15 +1,28 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(ethercat_interface)
 
+set(CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS}")
+
 ## Find catkin and any catkin packages
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   ethercat_soem
   hardware_interface
-  controller_manager)
+  controller_manager
+  message_generation)
+
+add_message_files(
+  FILES
+  Num.msg
+)
+
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+)
 
 ## Declare a catkin package
-catkin_package(CATKIN_DEPENDS)
+catkin_package(CATKIN_DEPENDS message_runtime)
 
 include_directories(include ${catkin_INCLUDE_DIRS})
 

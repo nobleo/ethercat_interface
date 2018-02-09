@@ -272,16 +272,30 @@ int main(int argc, char** argv)
 {
   ros::init(argc, argv, "ethercat_interface");
 
-  EthercatHardware robot;
-  controller_manager::ControllerManager cm(&robot);
-
   ros::AsyncSpinner spinner(1);
   spinner.start();
 
   int freq = 10; // in Hz
+  int Nslaves = 0;
+  std::vector<std::string> slaves;
 
-  ros::NodeHandle nh;
+  ros::NodeHandle nh("~");
   nh.param<int>("freq", freq, freq);
+  ROS_INFO("Using frequency: %d", freq);
+  nh.param<int>("number_of_slaves", Nslaves, Nslaves);
+  ROS_INFO("Using number_of_slaves: %d", Nslaves);
+
+  for (int i = 0; i < Nslaves; ++i)
+  {
+    std::string slavename;
+    nh.param<std::string>("slave"+std::to_string(i), slavename, "");
+    slaves.push_back(slavename);
+  }
+
+  for (auto slave: slaves)
+    ROS_WARN("Slave: %s", slave.c_str());
+
+
   ros::Rate r(freq);
 
   std::string ethercat_interface;
@@ -306,9 +320,9 @@ int main(int argc, char** argv)
 
       // robot.readJoints();
 
-      cm.update(t, ros::Duration(1.0f / freq));
+      //cm.update(t, ros::Duration(1.0f / freq));
 
-      robot.writeJoints();
+      //robot.writeJoints();
 
       r.sleep();
     }

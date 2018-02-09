@@ -14,10 +14,11 @@
   <author email="tim.clephas@nobleo.nl">Tim Clephas</author>
 
   <buildtool_depend>catkin</buildtool_depend>
-
+  <build_depend>message_generation</build_depend>
   <depend>roscpp</depend>
   <depend>ethercat_soem</depend>
   <depend>hardware_interface</depend>
   <depend>controller_manager</depend>
+  <exec_depend>message_runtime</exec_depend>
 
 </package>
