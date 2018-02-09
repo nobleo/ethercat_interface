@@ -12,10 +12,9 @@
 #include "ethercat_interface/el2502.h"
 #include "ethercat_interface/el5002.h"
 
-#include <hardware_interface/joint_command_interface.h>
-#include <hardware_interface/joint_state_interface.h>
-#include <hardware_interface/robot_hw.h>
-#include <controller_manager/controller_manager.h>
+#include <std_msgs/Float32.h>
+#include <std_msgs/Float64.h>
+#include <std_msgs/Bool.h>
 
 #define EC_TIMEOUTMON 500
 #define PDO_PERIOD 5000
@@ -31,12 +30,15 @@ boolean pdo_transfer_active = FALSE;
 
 #define PWM_PRES_MODE 1
 #define PWM_PERIOD_US 1000
-EL2502 pwmdriver(&ec_slave[4],4);
+EL2502 pwmdriver(&ec_slave[2],2);
 EL2008 digitalOut(&ec_slave[3]);
 #define GRAYCODE 1
 #define MULTITURN 1
 #define PIVOT_ENC_RES 8192
-EL5002 pivot1(&ec_slave[2],2);
+EL5002 pivot1(&ec_slave[4],4);
+
+ros::Publisher pivot1_pub;
+ros::Publisher pivot2_pub;
 
 boolean setup_ethercat(char* ifname)
 {
@@ -138,7 +140,7 @@ void stop_ethercat()
   ec_close();
 }
 
-void start_nobleobot(char* ifname)
+void start_soem(char* ifname)
 {
   /* initialise SOEM and bring to operational state*/
   if (!setup_ethercat(ifname))
@@ -149,7 +151,7 @@ void start_nobleobot(char* ifname)
 
 void* ecat_pdotransfer(void* ptr)
 {
-  while (1)
+  while (ros::ok())
   {
     if (pdo_transfer_active)
     {
@@ -165,7 +167,7 @@ void* ecat_statecheck(void* ptr)
   int slave;
   uint8 currentgroup = 0;
 
-  while (1)
+  while (ros::ok())
   {
     if (pdo_transfer_active &&
         ((wkc < expectedWKC) || ec_group[currentgroup].docheckstate))
@@ -264,10 +266,19 @@ void EthercatHardware::readPivots()
 {
   uint32_t chan1,chan2;
   double q1,q2;
-  pivot1.get_inputs(&chan1,&chan2);
+
+  chan1 = pivot1.get_input(0);
+  chan2 = pivot1.get_input(4);
+
   q1 = ((double)chan1)/PIVOT_ENC_RES*2*M_PI;
   q2 = ((double)chan2)/PIVOT_ENC_RES*2*M_PI;
-  ROS_DEBUG("Pivot1 Encs: %d %d  Rot: %g %g",chan1,chan2,q1,q2);
+  ROS_DEBUG("pivot1 Encs: %d %d  Rot: %g %g",chan1,chan2,q1,q2);
+
+  std_msgs::Float64 msg;
+  msg.data = q1;
+  pivot1_pub.publish(msg);
+  msg.data = q2;
+  pivot2_pub.publish(msg);
 }
 
 void EthercatHardware::readJoints()
@@ -296,24 +307,54 @@ void EthercatHardware::writeJoints()
   }
 }
 
+void pwm1Callback(const std_msgs::Float32::ConstPtr& msg)
+{
+  ROS_DEBUG("I heard: [%f]", msg->data);
+  pwmdriver.set_output(0,msg->data);
+}
+
+void pwm2Callback(const std_msgs::Float32::ConstPtr& msg)
+{
+  ROS_DEBUG("I heard: [%f]", msg->data);
+  pwmdriver.set_output(1,msg->data);
+}
+
+void bool1Callback(const std_msgs::Bool::ConstPtr& msg)
+{
+  ROS_DEBUG("I heard: [%d]", msg->data);
+  digitalOut.set_output(0,msg->data);
+}
+
+void bool2Callback(const std_msgs::Bool::ConstPtr& msg)
+{
+  ROS_DEBUG("I heard: [%d]", msg->data);
+  digitalOut.set_output(1,msg->data);
+}
+
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "ethercat_interface_fedra");
 
-  EthercatHardware robot;
-  controller_manager::ControllerManager cm(&robot);
+  EthercatHardware stack;
 
   ros::AsyncSpinner spinner(1);
   spinner.start();
 
   int freq = 10; // in Hz
 
-  ros::NodeHandle nh;
+  ros::NodeHandle nh("~");
   nh.param<int>("freq", freq, freq);
   ros::Rate r(freq);
 
+  pivot1_pub = nh.advertise<std_msgs::Float64>("pivot1", 1);
+  pivot2_pub = nh.advertise<std_msgs::Float64>("pivot2", 1);
+  ros::Subscriber pwm1_sub = nh.subscribe<std_msgs::Float32>("pwm1", 1, pwm1Callback);
+  ros::Subscriber pwm2_sub = nh.subscribe<std_msgs::Float32>("pwm2", 1, pwm2Callback);
+  ros::Subscriber bool1_sub = nh.subscribe<std_msgs::Bool>("bool1", 1, bool1Callback);
+  ros::Subscriber bool2_sub = nh.subscribe<std_msgs::Bool>("bool2", 1, bool2Callback);
+
   std::string ethercat_interface;
-  if (ros::param::get("ethercat_interface", ethercat_interface))
+  if (nh.getParam("ethercat_interface", ethercat_interface))
   {
     ROS_INFO("configured interface = %s", ethercat_interface.c_str());
 
@@ -325,27 +366,15 @@ int main(int argc, char** argv)
     std::copy(ethercat_interface.begin(), ethercat_interface.end(), interface);
     interface[ethercat_interface.size()] = '\0';
 
-    start_nobleobot(interface);
-
-    /* Enable motor drivers */
-    digitalOut.set_output(2,1);
-    digitalOut.set_output(3,1);
+    start_soem(interface);
 
     while (ros::ok())
     {
-      ros::Time t = ros::Time::now();
-
-      // robot.readJoints();
-
-      cm.update(t, ros::Duration(1.0f / freq));
-      robot.writeJoints();
+      stack.readPivots();
 
       r.sleep();
+      ros::spinOnce();
     }
-
-    /* Enable motor drivers */
-    digitalOut.set_output(2,0);
-    digitalOut.set_output(3,0);
 
     ROS_INFO("stop transferring messages");
     pdo_transfer_active = FALSE;

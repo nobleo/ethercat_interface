@@ -9,11 +9,10 @@ class EL5002{
   int slave_number;
 public:
   EL5002(ec_slavet *slave, int slave_num);
-  void get_inputs(uint32_t* channel_1, uint32_t* channel_2);
+  uint32_t get_input(uint8_t input_nr);
 
   void write_config(uint8_t graycode, uint8_t multiturn);
   void read_config(uint8_t* graycode, uint8_t* multiturn);
 };
-
 
 #endif
