@@ -240,29 +240,8 @@ void* ecat_statecheck(void* ptr)
   }
 }
 
-EthercatHardware::EthercatHardware()
-{
-  std::vector<std::string> joint_names;
-  joint_names.push_back("left_wheel");
-  joint_names.push_back("right_wheel");
 
-  for (size_t i = 0; i < joint_names.size(); ++i)
-  {
-    // connect and register the joint state interface
-    hardware_interface::JointStateHandle state_handle(joint_names[i], &pos[i], &vel[i], &eff[i]);
-    jnt_state_interface.registerHandle(state_handle);
-
-    registerInterface(&jnt_state_interface);
-
-    // connect and register the joint velocity interface
-    hardware_interface::JointHandle vel_handle(jnt_state_interface.getHandle(joint_names[i]), &cmd[i]);
-    jnt_vel_interface.registerHandle(vel_handle);
-
-    registerInterface(&jnt_vel_interface);
-  }
-}
-
-void EthercatHardware::readPivots()
+void readPivots()
 {
   uint32_t chan1,chan2;
   double q1,q2;
@@ -281,30 +260,9 @@ void EthercatHardware::readPivots()
   pivot2_pub.publish(msg);
 }
 
-void EthercatHardware::readJoints()
+void readJoints()
 {
 
-}
-
-void EthercatHardware::writeJoints()
-{
-  ROS_DEBUG("Left velocity: %f Right velocity: %f", cmd[0], cmd[1]);
-  // Set direction bits and send pwm values to drivers
-  if (cmd[0]<0){
-    digitalOut.set_output(0,1);
-    pwmdriver.set_output(0, -cmd[0]);
-  }else{
-    digitalOut.set_output(0,0);
-    pwmdriver.set_output(0, cmd[0]);
-  }
-
-  if (cmd[1]<0){
-    digitalOut.set_output(1,1);
-    pwmdriver.set_output(1, -cmd[1]);
-  }else{
-    digitalOut.set_output(1,0);
-    pwmdriver.set_output(1, cmd[1]);
-  }
 }
 
 void pwm1Callback(const std_msgs::Float32::ConstPtr& msg)
@@ -334,8 +292,6 @@ void bool2Callback(const std_msgs::Bool::ConstPtr& msg)
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "ethercat_interface_fedra");
-
-  EthercatHardware stack;
 
   ros::AsyncSpinner spinner(1);
   spinner.start();
@@ -370,7 +326,7 @@ int main(int argc, char** argv)
 
     while (ros::ok())
     {
-      stack.readPivots();
+      readPivots();
 
       r.sleep();
       ros::spinOnce();
@@ -388,6 +344,8 @@ int main(int argc, char** argv)
   }
 
   spinner.stop();
+
+  ROS_INFO("Shutdown completed");
 
   return 0;
 }
