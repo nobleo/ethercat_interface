@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>ethercat_interface</name>
-  <version>0.1.0</version>
+  <version>0.2.0</version>
   <description>The ethercat_interface package</description>
 
   <maintainer email="joost.groenen@nobleo.nl">Joost Groenen</maintainer>
@@ -18,7 +18,5 @@
 
   <depend>roscpp</depend>
   <depend>ethercat_soem</depend>
-  <depend>hardware_interface</depend>
-  <depend>controller_manager</depend>
 
 </package>
