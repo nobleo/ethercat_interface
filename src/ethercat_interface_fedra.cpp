@@ -8,6 +8,7 @@
 #include "ethercat_interface/ethercat_includes.h"
 #include "ethercat_interface/ethercat_interface_fedra.h"
 
+#include "ethercat_interface/el2004.h"
 #include "ethercat_interface/el2008.h"
 #include "ethercat_interface/el2502.h"
 #include "ethercat_interface/el5002.h"
@@ -28,17 +29,25 @@ volatile int wkc;
 
 boolean pdo_transfer_active = FALSE;
 
+/* Define EtherCAT Stack */
 #define PWM_PRES_MODE 1
 #define PWM_PERIOD_US 1000
-EL2502 pwmdriver(&ec_slave[2],2);
-EL2008 digitalOut(&ec_slave[3]);
+EL2502 pwmdriver_pivot1(&ec_slave[2],2);
+EL2004 digitalOut_pivot1(&ec_slave[3]);
 #define GRAYCODE 1
-#define MULTITURN 1
+#define MULTITURN 0
+#define FRAMESIZE 25
+#define DATALENGTH 24
 #define PIVOT_ENC_RES 8192
-EL5002 pivot1(&ec_slave[4],4);
+EL5002 encoder_pivot1(&ec_slave[4],4);
+EL2502 pwmdriver_pivot2(&ec_slave[6],6);
+EL2004 digitalOut_pivot2(&ec_slave[7]);
+//EL5002 pivot2(&ec_slave[4],4);
+EL2008 digitalOut_laminator(&ec_slave[8]);
 
-ros::Publisher pivot1_pub;
-ros::Publisher pivot2_pub;
+/* Define ROS-topic publishers */
+ros::Publisher encoder_pivot1_pub;
+ros::Publisher encoder_pivot2_pub;
 
 boolean setup_ethercat(char* ifname)
 {
@@ -58,11 +67,36 @@ boolean setup_ethercat(char* ifname)
 
       ec_configdc();
 
-      pwmdriver.write_config(PWM_PRES_MODE, PWM_PERIOD_US);
-      pivot1.write_config(GRAYCODE,MULTITURN);
+      pwmdriver_pivot1.write_config(0,PWM_PRES_MODE, PWM_PERIOD_US);
+      pwmdriver_pivot1.write_config(1,PWM_PRES_MODE, PWM_PERIOD_US);
       uint8_t pres; uint16_t per;
-      pwmdriver.read_config(&pres, &per);
-      ROS_INFO("Written values %d, %d, Received values %d, %d", PWM_PRES_MODE, PWM_PERIOD_US, pres, per);
+      pwmdriver_pivot1.read_config(0, &pres, &per);
+      ROS_INFO("PWM Channel 0, Written values %d, %d, Received values %d, %d", PWM_PRES_MODE, PWM_PERIOD_US, pres, per);
+      pwmdriver_pivot1.read_config(1, &pres, &per);
+      ROS_INFO("PWM Channel 1, Written values %d, %d, Received values %d, %d", PWM_PRES_MODE, PWM_PERIOD_US, pres, per);
+
+      pwmdriver_pivot2.write_config(0,PWM_PRES_MODE, PWM_PERIOD_US);
+      pwmdriver_pivot2.write_config(1,PWM_PRES_MODE, PWM_PERIOD_US);
+      pwmdriver_pivot2.read_config(0, &pres, &per);
+      ROS_INFO("PWM Channel 0, Written values %d, %d, Received values %d, %d", PWM_PRES_MODE, PWM_PERIOD_US, pres, per);
+      pwmdriver_pivot2.read_config(1, &pres, &per);
+      ROS_INFO("PWM Channel 1, Written values %d, %d, Received values %d, %d", PWM_PRES_MODE, PWM_PERIOD_US, pres, per);
+
+      encoder_pivot1.write_config(0,GRAYCODE,MULTITURN,FRAMESIZE,DATALENGTH);
+      encoder_pivot1.write_config(1,GRAYCODE,MULTITURN,FRAMESIZE,DATALENGTH);
+      uint8_t graycode; uint8_t multiturn; uint8_t framesize; uint8_t datalength;
+      encoder_pivot1.read_config(0, &graycode, &multiturn, &framesize, &datalength);
+      ROS_INFO("SSI Channel 0, Written values %d, %d, %d, %d, Received values %d, %d, %d, %d", GRAYCODE, MULTITURN, FRAMESIZE, DATALENGTH,graycode, multiturn, framesize, datalength);
+      encoder_pivot1.read_config(1, &graycode, &multiturn, &framesize, &datalength);
+      ROS_INFO("SSI Channel 1, Written values %d, %d, %d, %d, Received values %d, %d, %d, %d", GRAYCODE, MULTITURN, FRAMESIZE, DATALENGTH,graycode, multiturn, framesize, datalength);
+
+//      encoder_pivot2.write_config(0,GRAYCODE,MULTITURN,FRAMESIZE,DATALENGTH);
+//      encoder_pivot2.write_config(1,GRAYCODE,MULTITURN,FRAMESIZE,DATALENGTH);
+//      uint8_t graycode; uint8_t multiturn; uint8_t framesize; uint8_t datalength;
+//      encoder_pivot2.read_config(0, &graycode, &multiturn, &framesize, &datalength);
+//      ROS_INFO("SSI Channel 0, Written values %d, %d, %d, %d, Received values %d, %d, %d, %d", GRAYCODE, MULTITURN, FRAMESIZE, DATALENGTH,graycode, multiturn, framesize, datalength);
+//      encoder_pivot2.read_config(1, &graycode, &multiturn, &framesize, &datalength);
+//      ROS_INFO("SSI Channel 1, Written values %d, %d, %d, %d, Received values %d, %d, %d, %d", GRAYCODE, MULTITURN, FRAMESIZE, DATALENGTH,graycode, multiturn, framesize, datalength);
 
       ROS_INFO("Slaves mapped, state to SAFE_OP.");
       /* wait for all slaves to reach SAFE_OP state */
@@ -246,47 +280,66 @@ void readPivots()
   uint32_t chan1,chan2;
   double q1,q2;
 
-  chan1 = pivot1.get_input(0);
-  chan2 = pivot1.get_input(4);
+  chan1 = encoder_pivot1.get_input(0);
+  chan2 = encoder_pivot1.get_input(1);
 
   q1 = ((double)chan1)/PIVOT_ENC_RES*2*M_PI;
   q2 = ((double)chan2)/PIVOT_ENC_RES*2*M_PI;
-  ROS_DEBUG("pivot1 Encs: %d %d  Rot: %g %g",chan1,chan2,q1,q2);
+  ROS_DEBUG("encoder_pivot1 Encs: %u %u  Rot: %g %g",chan1,chan2,q1,q2);
 
   std_msgs::Float64 msg;
   msg.data = q1;
-  pivot1_pub.publish(msg);
+  encoder_pivot1_pub.publish(msg);
   msg.data = q2;
-  pivot2_pub.publish(msg);
-}
-
-void readJoints()
-{
-
+  encoder_pivot2_pub.publish(msg);
 }
 
 void pwm1Callback(const std_msgs::Float32::ConstPtr& msg)
 {
   ROS_DEBUG("I heard: [%f]", msg->data);
-  pwmdriver.set_output(0,msg->data);
+  pwmdriver_pivot1.set_output(0,msg->data);
 }
 
 void pwm2Callback(const std_msgs::Float32::ConstPtr& msg)
 {
   ROS_DEBUG("I heard: [%f]", msg->data);
-  pwmdriver.set_output(1,msg->data);
+  pwmdriver_pivot1.set_output(1,msg->data);
+}
+
+void pwm3Callback(const std_msgs::Float32::ConstPtr& msg)
+{
+  ROS_DEBUG("I heard: [%f]", msg->data);
+  pwmdriver_pivot2.set_output(0,msg->data);
+}
+
+void pwm4Callback(const std_msgs::Float32::ConstPtr& msg)
+{
+  ROS_DEBUG("I heard: [%f]", msg->data);
+  pwmdriver_pivot2.set_output(1,msg->data);
 }
 
 void bool1Callback(const std_msgs::Bool::ConstPtr& msg)
 {
   ROS_DEBUG("I heard: [%d]", msg->data);
-  digitalOut.set_output(0,msg->data);
+  digitalOut_pivot1.set_output(0,msg->data);
 }
 
 void bool2Callback(const std_msgs::Bool::ConstPtr& msg)
 {
   ROS_DEBUG("I heard: [%d]", msg->data);
-  digitalOut.set_output(1,msg->data);
+  digitalOut_pivot1.set_output(1,msg->data);
+}
+
+void bool3Callback(const std_msgs::Bool::ConstPtr& msg)
+{
+  ROS_DEBUG("I heard: [%d]", msg->data);
+  digitalOut_pivot2.set_output(1,msg->data);
+}
+
+void bool4Callback(const std_msgs::Bool::ConstPtr& msg)
+{
+  ROS_DEBUG("I heard: [%d]", msg->data);
+  digitalOut_pivot2.set_output(1,msg->data);
 }
 
 int main(int argc, char** argv)
@@ -302,12 +355,16 @@ int main(int argc, char** argv)
   nh.param<int>("freq", freq, freq);
   ros::Rate r(freq);
 
-  pivot1_pub = nh.advertise<std_msgs::Float64>("pivot1", 1);
-  pivot2_pub = nh.advertise<std_msgs::Float64>("pivot2", 1);
+  encoder_pivot1_pub = nh.advertise<std_msgs::Float64>("encoder_pivot1", 1);
+  encoder_pivot2_pub = nh.advertise<std_msgs::Float64>("encoder_pivot2", 1);
   ros::Subscriber pwm1_sub = nh.subscribe<std_msgs::Float32>("pwm1", 1, pwm1Callback);
   ros::Subscriber pwm2_sub = nh.subscribe<std_msgs::Float32>("pwm2", 1, pwm2Callback);
+  ros::Subscriber pwm3_sub = nh.subscribe<std_msgs::Float32>("pwm3", 1, pwm3Callback);
+  ros::Subscriber pwm4_sub = nh.subscribe<std_msgs::Float32>("pwm4", 1, pwm4Callback);
   ros::Subscriber bool1_sub = nh.subscribe<std_msgs::Bool>("bool1", 1, bool1Callback);
   ros::Subscriber bool2_sub = nh.subscribe<std_msgs::Bool>("bool2", 1, bool2Callback);
+  ros::Subscriber bool3_sub = nh.subscribe<std_msgs::Bool>("bool3", 1, bool3Callback);
+  ros::Subscriber bool4_sub = nh.subscribe<std_msgs::Bool>("bool4", 1, bool4Callback);
 
   std::string ethercat_interface;
   if (nh.getParam("ethercat_interface", ethercat_interface))

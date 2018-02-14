@@ -13,11 +13,11 @@ class EL2502{
 	uint16_t period_us;
 public:
 	EL2502(ec_slavet *slave, int slave_num);
-	void set_output(uint8_t output_nr, double dutycycle);
-	double get_output(uint8_t output_nr);
+	void set_output(uint8_t channel, double dutycycle);
+	double get_output(uint8_t channel);
 
-	void write_config(uint8_t pres_mode, uint16_t period_us);
-	void read_config(uint8_t* pres_mode, uint16_t* period_us);
+	void write_config(uint8_t channel, uint8_t pres_mode, uint16_t period_us);
+	void read_config(uint8_t channel, uint8_t* pres_mode, uint16_t* period_us);
 };
 
 
