@@ -333,7 +333,7 @@ void bool2Callback(const std_msgs::Bool::ConstPtr& msg)
 void bool3Callback(const std_msgs::Bool::ConstPtr& msg)
 {
   ROS_DEBUG("I heard: [%d]", msg->data);
-  digitalOut_pivot2.set_output(1,msg->data);
+  digitalOut_pivot2.set_output(0,msg->data);
 }
 
 void bool4Callback(const std_msgs::Bool::ConstPtr& msg)
