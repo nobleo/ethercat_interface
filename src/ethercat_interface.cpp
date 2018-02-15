@@ -29,8 +29,8 @@ volatile int wkc;
 
 boolean pdo_transfer_active = FALSE;
 
-EL7332 motordriver(&ec_slave[3], 3);
-EL2008 digitalOut(&ec_slave[2]);
+EL7332 motordriver(ec_slave, 3);
+EL2008 digitalOut(ec_slave, 2);
 
 boolean setup_ethercat(char* ifname)
 {

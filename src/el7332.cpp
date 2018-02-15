@@ -2,9 +2,8 @@
 #include "ethercat_interface/ethercat_includes.h"
 
 EL7332::EL7332(ec_slavet *slave, int slave_num){
-	ec_slave = slave;
+  ec_slave = (slave+slave_num);
 	slave_number = slave_num;
-
 }
 
 void EL7332::enable(uint8_t axis, boolean do_enable){

@@ -1,18 +1,27 @@
 #include "ethercat_interface/el5002.h"
 #include "ethercat_interface/ethercat_includes.h"
-#include <iostream>
-#include <stdio.h>
+#include "ros/ros.h"
 
 EL5002::EL5002(ec_slavet *slave, int slave_num){
-  ec_slave = slave;
+  ec_slave = (slave+slave_num);
   slave_number = slave_num;
 }
 
+int EL5002::check_slave(){
+  if(strcmp(ec_slave->name,"EL5002")){
+    ROS_ERROR("slave %d is configured to be a EL5002, but found a %s",slave_number,ec_slave->name);
+    return 1;
+  }else{
+    return 0;
+  }
+}
+
 uint32_t EL5002::get_input(uint8_t channel){
-  /* Input-data is: Status_ch1 (2 bytes) Counter_ch1 (4 bytes) Status_ch2 (2 bytes) Counter_ch2 (4 bytes) */
   if(channel<2){
+    /* Input-data is: Status_ch1 (2 bytes) Counter_ch1 (4 bytes) Status_ch2 (2 bytes) Counter_ch2 (4 bytes) */
     return *(uint32_t*)(&ec_slave->inputs[2+channel*6]);
   }else{
+    ROS_ERROR("slave %d (EL5002) Requested channel %d, which is not valid",slave_number,channel);
     return 0;
   }
 }

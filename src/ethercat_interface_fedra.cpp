@@ -32,22 +32,38 @@ boolean pdo_transfer_active = FALSE;
 /* Define EtherCAT Stack */
 #define PWM_PRES_MODE 1
 #define PWM_PERIOD_US 1000
-EL2502 pwmdriver_pivot1(&ec_slave[2],2);
-EL2004 digitalOut_pivot1(&ec_slave[3]);
+EL2502 pwmdriver_pivot1(ec_slave,2);
+EL2004 digitalOut_pivot1(ec_slave,3);
 #define GRAYCODE 1
 #define MULTITURN 0
 #define FRAMESIZE 25
 #define DATALENGTH 24
 #define PIVOT_ENC_RES 8192
-EL5002 encoder_pivot1(&ec_slave[4],4);
-EL2502 pwmdriver_pivot2(&ec_slave[6],6);
-EL2004 digitalOut_pivot2(&ec_slave[7]);
-//EL5002 encoder_pivot2(&ec_slave[8],8);
-EL2008 digitalOut_laminator(&ec_slave[8]);
+EL5002 encoder_pivot1(ec_slave,4);
+EL2502 pwmdriver_pivot2(ec_slave,6);
+EL2004 digitalOut_pivot2(ec_slave,7);
+//EL5002 encoder_pivot2(ec_slave,8);
+EL2008 digitalOut_laminator(ec_slave,8);
 
 /* Define ROS-topic publishers */
 ros::Publisher encoder_pivot1_pub;
 ros::Publisher encoder_pivot2_pub;
+
+boolean check_ethercat_slaves(){
+  int slaves_wrong = 0;
+  slaves_wrong = pwmdriver_pivot1.check_slave() +
+      digitalOut_pivot1.check_slave() +
+      encoder_pivot1.check_slave() +
+      pwmdriver_pivot2.check_slave() +
+      digitalOut_pivot2.check_slave() +
+      digitalOut_laminator.check_slave();
+  if(slaves_wrong>0){
+    ROS_ERROR("%d slaves are NOT connected in the expected order",slaves_wrong);
+    return FALSE;
+  }else{
+    return TRUE;
+  }
+}
 
 boolean setup_ethercat(char* ifname)
 {
@@ -128,7 +144,8 @@ boolean setup_ethercat(char* ifname)
       {
         ROS_INFO("Operational state reached for all slaves.");
         pdo_transfer_active = TRUE;
-        return TRUE;
+        /* Check if slaves are found in the expected order */
+        return check_ethercat_slaves();
       }
       else
       {
@@ -174,12 +191,14 @@ void stop_ethercat()
   ec_close();
 }
 
-void start_soem(char* ifname)
+bool start_soem(char* ifname)
 {
   /* initialise SOEM and bring to operational state*/
-  if (!setup_ethercat(ifname))
-  {
+  if (!setup_ethercat(ifname)){
     ROS_ERROR("Initialization failed");
+    return FALSE;
+  }else{
+    return TRUE;
   }
 }
 
@@ -297,49 +316,65 @@ void readPivots()
 void pwm1Callback(const std_msgs::Float32::ConstPtr& msg)
 {
   ROS_DEBUG("I heard: [%f]", msg->data);
-  pwmdriver_pivot1.set_output(0,msg->data);
+  if(pdo_transfer_active){
+    pwmdriver_pivot1.set_output(0,msg->data);
+  }
 }
 
 void pwm2Callback(const std_msgs::Float32::ConstPtr& msg)
 {
   ROS_DEBUG("I heard: [%f]", msg->data);
-  pwmdriver_pivot1.set_output(1,msg->data);
+  if(pdo_transfer_active){
+    pwmdriver_pivot1.set_output(1,msg->data);
+  }
 }
 
 void pwm3Callback(const std_msgs::Float32::ConstPtr& msg)
 {
   ROS_DEBUG("I heard: [%f]", msg->data);
-  pwmdriver_pivot2.set_output(0,msg->data);
+  if(pdo_transfer_active){
+    pwmdriver_pivot2.set_output(0,msg->data);
+  }
 }
 
 void pwm4Callback(const std_msgs::Float32::ConstPtr& msg)
 {
   ROS_DEBUG("I heard: [%f]", msg->data);
-  pwmdriver_pivot2.set_output(1,msg->data);
+  if(pdo_transfer_active){
+    pwmdriver_pivot2.set_output(1,msg->data);
+  }
 }
 
 void bool1Callback(const std_msgs::Bool::ConstPtr& msg)
 {
   ROS_DEBUG("I heard: [%d]", msg->data);
-  digitalOut_pivot1.set_output(0,msg->data);
+  if(pdo_transfer_active){
+    digitalOut_pivot1.set_output(0,msg->data);
+  }
 }
 
 void bool2Callback(const std_msgs::Bool::ConstPtr& msg)
 {
   ROS_DEBUG("I heard: [%d]", msg->data);
-  digitalOut_pivot1.set_output(1,msg->data);
+  if(pdo_transfer_active){
+    digitalOut_pivot1.set_output(1,msg->data);
+  }
 }
 
 void bool3Callback(const std_msgs::Bool::ConstPtr& msg)
 {
   ROS_DEBUG("I heard: [%d]", msg->data);
-  digitalOut_pivot2.set_output(0,msg->data);
+  if(pdo_transfer_active){
+    digitalOut_pivot2.set_output(0,msg->data);
+  }
 }
 
 void bool4Callback(const std_msgs::Bool::ConstPtr& msg)
 {
   ROS_DEBUG("I heard: [%d]", msg->data);
-  digitalOut_pivot2.set_output(1,msg->data);
+  if(pdo_transfer_active){
+    digitalOut_pivot2.set_output(1,msg->data);
+  }
 }
 
 int main(int argc, char** argv)
@@ -351,21 +386,20 @@ int main(int argc, char** argv)
 
   int freq = 10; // in Hz
 
-  ros::NodeHandle nh;
   ros::NodeHandle nh_priv("~");
   nh_priv.param<int>("freq", freq, freq);
   ros::Rate r(freq);
 
-  encoder_pivot1_pub = nh.advertise<std_msgs::Float64>("encoder_pivot1", 1);
-  encoder_pivot2_pub = nh.advertise<std_msgs::Float64>("encoder_pivot2", 1);
-  ros::Subscriber pwm1_sub = nh.subscribe<std_msgs::Float32>("pwm1", 1, pwm1Callback);
-  ros::Subscriber pwm2_sub = nh.subscribe<std_msgs::Float32>("pwm2", 1, pwm2Callback);
-  ros::Subscriber pwm3_sub = nh.subscribe<std_msgs::Float32>("pwm3", 1, pwm3Callback);
-  ros::Subscriber pwm4_sub = nh.subscribe<std_msgs::Float32>("pwm4", 1, pwm4Callback);
-  ros::Subscriber bool1_sub = nh.subscribe<std_msgs::Bool>("bool1", 1, bool1Callback);
-  ros::Subscriber bool2_sub = nh.subscribe<std_msgs::Bool>("bool2", 1, bool2Callback);
-  ros::Subscriber bool3_sub = nh.subscribe<std_msgs::Bool>("bool3", 1, bool3Callback);
-  ros::Subscriber bool4_sub = nh.subscribe<std_msgs::Bool>("bool4", 1, bool4Callback);
+  encoder_pivot1_pub = nh_priv.advertise<std_msgs::Float64>("encoder1", 1);
+  encoder_pivot2_pub = nh_priv.advertise<std_msgs::Float64>("encoder2", 1);
+  nh_priv.subscribe<std_msgs::Float32>("pwm1", 1, pwm1Callback);
+  nh_priv.subscribe<std_msgs::Float32>("pwm2", 1, pwm2Callback);
+  nh_priv.subscribe<std_msgs::Float32>("pwm3", 1, pwm3Callback);
+  nh_priv.subscribe<std_msgs::Float32>("pwm4", 1, pwm4Callback);
+  nh_priv.subscribe<std_msgs::Bool>("bool1", 1, bool1Callback);
+  nh_priv.subscribe<std_msgs::Bool>("bool2", 1, bool2Callback);
+  nh_priv.subscribe<std_msgs::Bool>("bool3", 1, bool3Callback);
+  nh_priv.subscribe<std_msgs::Bool>("bool4", 1, bool4Callback);
 
   std::string ethercat_interface;
   if (nh_priv.getParam("ethercat_interface", ethercat_interface))
@@ -380,14 +414,14 @@ int main(int argc, char** argv)
     std::copy(ethercat_interface.begin(), ethercat_interface.end(), interface);
     interface[ethercat_interface.size()] = '\0';
 
-    start_soem(interface);
+    if(start_soem(interface)){
+      while (ros::ok())
+      {
+        readPivots();
 
-    while (ros::ok())
-    {
-      readPivots();
-
-      r.sleep();
-      ros::spinOnce();
+        r.sleep();
+        ros::spinOnce();
+      }
     }
 
     ROS_INFO("stop transferring messages");

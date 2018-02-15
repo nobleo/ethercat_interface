@@ -23,6 +23,7 @@ class EL2502{
 	uint16_t period_us;
 public:
 	EL2502(ec_slavet *slave, int slave_num);
+	int check_slave();
 	void set_output(uint8_t channel, float32 dutycycle);
 	float32 get_output(uint8_t channel);
 

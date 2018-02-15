@@ -29,8 +29,8 @@ volatile int wkc;
 
 boolean pdo_transfer_active = FALSE;
 
-EL2008 digitalOut(&ec_slave[3]);
-EL4002 analogOut(&ec_slave[2]);
+EL2008 digitalOut(ec_slave, 3);
+EL4002 analogOut(ec_slave, 2);
 
 boolean setup_ethercat(char* ifname)
 {

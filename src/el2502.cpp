@@ -1,19 +1,30 @@
 #include "ethercat_interface/el2502.h"
 #include "ethercat_interface/ethercat_includes.h"
-#include <iostream>
+#include "ros/ros.h"
 
 EL2502::EL2502(ec_slavet *slave, int slave_num){
-	ec_slave = slave;
+	ec_slave = (slave+slave_num);
 	slave_number = slave_num;
 	// Initialize settings in constructor with default Beckhoff values
 	pres_mode = 0;
   period_us = 4000;
 }
 
+int EL2502::check_slave(){
+  if(strcmp(ec_slave->name,"EL2502")){
+    ROS_ERROR("slave %d is configured to be a EL2502, but found a %s",slave_number,ec_slave->name);
+    return 1;
+  }else{
+    return 0;
+  }
+}
+
 void EL2502::set_output(uint8_t channel, float32 dutycycle){
   if(channel<2){
     uint16_t *dc_value = (uint16_t *)&(ec_slave->outputs[2*channel]);
     *dc_value =  (uint16_t) (dmax(dmin(dutycycle,1.0),0.0)*((float32)pwm_res));
+  }else{
+    ROS_ERROR("slave %d (EL2502) Requested channel %d, which is not valid",slave_number,channel);
   }
 }
 
@@ -22,6 +33,7 @@ float32 EL2502::get_output(uint8_t channel){
     uint16_t *dc_value = (uint16_t *)&(ec_slave->outputs[2*channel]);
     return ((float32)*dc_value)/((float32)pwm_res);
   }else{
+    ROS_ERROR("slave %d (EL2502) Requested channel %d, which is not valid",slave_number,channel);
     return 0.0f;
   }
 }
