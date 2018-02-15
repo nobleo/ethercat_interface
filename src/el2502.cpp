@@ -10,14 +10,20 @@ EL2502::EL2502(ec_slavet *slave, int slave_num){
   period_us = 4000;
 }
 
-void EL2502::set_output(uint8_t channel, double dutycycle){
-  uint16_t *dc_value = (uint16_t *)&(ec_slave->outputs[2*channel]);
-  *dc_value =  (uint16_t) (dutycycle*pwm_res);
+void EL2502::set_output(uint8_t channel, float32 dutycycle){
+  if(channel<2){
+    uint16_t *dc_value = (uint16_t *)&(ec_slave->outputs[2*channel]);
+    *dc_value =  (uint16_t) (dmax(dmin(dutycycle,1.0),0.0)*((float32)pwm_res));
+  }
 }
 
-double EL2502::get_output(uint8_t channel){
-  uint16_t *dc_value = (uint16_t *)&(ec_slave->outputs[2*channel]);
-  return ((double)*dc_value)/((double)pwm_res);
+float32 EL2502::get_output(uint8_t channel){
+  if(channel<2){
+    uint16_t *dc_value = (uint16_t *)&(ec_slave->outputs[2*channel]);
+    return ((float32)*dc_value)/((float32)pwm_res);
+  }else{
+    return 0.0f;
+  }
 }
 
 void EL2502::write_config(uint8_t channel, uint8_t pres, uint16_t per)

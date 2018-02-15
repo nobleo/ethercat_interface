@@ -5,12 +5,14 @@ EL2008::EL2008(ec_slavet *slave){
 }
 
 void EL2008::set_output(uint8_t output_nr, boolean do_enable){
-	if(do_enable){
-		ec_slave->outputs[0] |= (1<<output_nr);
-	}
-	else{
-		ec_slave->outputs[0] &= ~(1<<output_nr);
-	}
+  if (output_nr<8){
+    if(do_enable){
+      ec_slave->outputs[0] |= (1<<output_nr);
+    }
+    else{
+      ec_slave->outputs[0] &= ~(1<<output_nr);
+    }
+  }
 }
 
 void EL2008::toggle_output(uint8_t output_nr){
@@ -18,6 +20,10 @@ void EL2008::toggle_output(uint8_t output_nr){
 }
 
 boolean EL2008::get_output(uint8_t output_nr){
-	return (ec_slave->outputs[0] & (1<<output_nr))?TRUE:FALSE;
+  if (output_nr<8){
+    return (ec_slave->outputs[0] & (1<<output_nr))?TRUE:FALSE;
+  }else{
+    return FALSE;
+  }
 }
 

@@ -42,7 +42,7 @@ EL2004 digitalOut_pivot1(&ec_slave[3]);
 EL5002 encoder_pivot1(&ec_slave[4],4);
 EL2502 pwmdriver_pivot2(&ec_slave[6],6);
 EL2004 digitalOut_pivot2(&ec_slave[7]);
-//EL5002 pivot2(&ec_slave[4],4);
+//EL5002 encoder_pivot2(&ec_slave[8],8);
 EL2008 digitalOut_laminator(&ec_slave[8]);
 
 /* Define ROS-topic publishers */
@@ -351,8 +351,9 @@ int main(int argc, char** argv)
 
   int freq = 10; // in Hz
 
-  ros::NodeHandle nh("~");
-  nh.param<int>("freq", freq, freq);
+  ros::NodeHandle nh;
+  ros::NodeHandle nh_priv("~");
+  nh_priv.param<int>("freq", freq, freq);
   ros::Rate r(freq);
 
   encoder_pivot1_pub = nh.advertise<std_msgs::Float64>("encoder_pivot1", 1);
@@ -367,7 +368,7 @@ int main(int argc, char** argv)
   ros::Subscriber bool4_sub = nh.subscribe<std_msgs::Bool>("bool4", 1, bool4Callback);
 
   std::string ethercat_interface;
-  if (nh.getParam("ethercat_interface", ethercat_interface))
+  if (nh_priv.getParam("ethercat_interface", ethercat_interface))
   {
     ROS_INFO("configured interface = %s", ethercat_interface.c_str());
 

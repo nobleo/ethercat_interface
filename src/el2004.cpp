@@ -5,12 +5,14 @@ EL2004::EL2004(ec_slavet *slave){
 }
 
 void EL2004::set_output(uint8_t output_nr, boolean do_enable){
-	if(do_enable){
-		ec_slave->outputs[0] |= (1<<output_nr);
-	}
-	else{
-		ec_slave->outputs[0] &= ~(1<<output_nr);
-	}
+  if (output_nr<4){
+    if(do_enable){
+      ec_slave->outputs[0] |= (1<<output_nr);
+    }
+    else{
+      ec_slave->outputs[0] &= ~(1<<output_nr);
+    }
+  }
 }
 
 void EL2004::toggle_output(uint8_t output_nr){
@@ -18,5 +20,9 @@ void EL2004::toggle_output(uint8_t output_nr){
 }
 
 boolean EL2004::get_output(uint8_t output_nr){
-	return (ec_slave->outputs[0] & (1<<output_nr))?TRUE:FALSE;
+  if (output_nr<4){
+    return (ec_slave->outputs[0] & (1<<output_nr))?TRUE:FALSE;
+  }else{
+    return FALSE;
+  }
 }

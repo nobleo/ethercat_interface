@@ -10,7 +10,11 @@ EL5002::EL5002(ec_slavet *slave, int slave_num){
 
 uint32_t EL5002::get_input(uint8_t channel){
   /* Input-data is: Status_ch1 (2 bytes) Counter_ch1 (4 bytes) Status_ch2 (2 bytes) Counter_ch2 (4 bytes) */
-  return *(uint32_t*)(&ec_slave->inputs[2+channel*6]);
+  if(channel<2){
+    return *(uint32_t*)(&ec_slave->inputs[2+channel*6]);
+  }else{
+    return 0;
+  }
 }
 
 void EL5002::write_config(uint8_t channel, uint8_t graycode, uint8_t multiturn, uint8_t framesize, uint8_t datalength)
