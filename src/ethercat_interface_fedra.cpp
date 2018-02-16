@@ -31,13 +31,13 @@ boolean pdo_transfer_active = FALSE;
 
 /* Define EtherCAT Stack */
 #define PWM_PRES_MODE 1
-#define PWM_PERIOD_US 1000
+#define PWM_PERIOD_US 10000 // 10.000 us a.k.a. 100Hz
 EL2502 pwmdriver_pivot1(ec_slave,2);
 EL2004 digitalOut_pivot1(ec_slave,3);
 #define GRAYCODE 1
-#define MULTITURN 0
+#define MULTITURN 2 // 0: Multiturn (25 bits), 1: Single-turn (13 bits), 2: Variable (1-32 bits, configured via FRAMESIZE/DATALENGTH)
 #define FRAMESIZE 25
-#define DATALENGTH 24
+#define DATALENGTH 25
 #define PIVOT_ENC_RES 8192
 EL5002 encoder_pivot1(ec_slave,4);
 EL2502 pwmdriver_pivot2(ec_slave,6);
