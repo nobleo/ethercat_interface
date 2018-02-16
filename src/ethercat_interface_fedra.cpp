@@ -392,14 +392,14 @@ int main(int argc, char** argv)
 
   encoder_pivot1_pub = nh_priv.advertise<std_msgs::Float64>("encoder1", 1);
   encoder_pivot2_pub = nh_priv.advertise<std_msgs::Float64>("encoder2", 1);
-  nh_priv.subscribe<std_msgs::Float32>("pwm1", 1, pwm1Callback);
-  nh_priv.subscribe<std_msgs::Float32>("pwm2", 1, pwm2Callback);
-  nh_priv.subscribe<std_msgs::Float32>("pwm3", 1, pwm3Callback);
-  nh_priv.subscribe<std_msgs::Float32>("pwm4", 1, pwm4Callback);
-  nh_priv.subscribe<std_msgs::Bool>("bool1", 1, bool1Callback);
-  nh_priv.subscribe<std_msgs::Bool>("bool2", 1, bool2Callback);
-  nh_priv.subscribe<std_msgs::Bool>("bool3", 1, bool3Callback);
-  nh_priv.subscribe<std_msgs::Bool>("bool4", 1, bool4Callback);
+  ros::Subscriber pwm1_sub = nh_priv.subscribe<std_msgs::Float32>("pwm1", 1, pwm1Callback);
+  ros::Subscriber pwm2_sub = nh_priv.subscribe<std_msgs::Float32>("pwm2", 1, pwm2Callback);
+  ros::Subscriber pwm3_sub = nh_priv.subscribe<std_msgs::Float32>("pwm3", 1, pwm3Callback);
+  ros::Subscriber pwm4_sub = nh_priv.subscribe<std_msgs::Float32>("pwm4", 1, pwm4Callback);
+  ros::Subscriber bool1_sub = nh_priv.subscribe<std_msgs::Bool>("bool1", 1, bool1Callback);
+  ros::Subscriber bool2_sub = nh_priv.subscribe<std_msgs::Bool>("bool2", 1, bool2Callback);
+  ros::Subscriber bool3_sub = nh_priv.subscribe<std_msgs::Bool>("bool3", 1, bool3Callback);
+  ros::Subscriber bool4_sub = nh_priv.subscribe<std_msgs::Bool>("bool4", 1, bool4Callback);
 
   std::string ethercat_interface;
   if (nh_priv.getParam("ethercat_interface", ethercat_interface))
