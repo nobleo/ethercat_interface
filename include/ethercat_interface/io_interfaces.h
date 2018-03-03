@@ -1,0 +1,4 @@
+#ifndef IO_INTERFACES_H
+#define IO_INTERFACES_H
+
+#endif // IO_INTERFACES_H

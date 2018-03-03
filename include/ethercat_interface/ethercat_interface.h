@@ -1,14 +1,12 @@
+#ifndef ETHERCAT_INTERFACE_H
+#define ETHERCAT_INTERFACE_H
 
-class EthercatHardware
+class EthercatInterface
 {
 public:
-  EthercatHardware();
-
-  void readPivots();
-
-  void readJoints();
-
-  void writeJoints();
+    EthercatInterface(){}
 
 private:
 };
+
+#endif // ETHERCAT_INTERFACE_H
