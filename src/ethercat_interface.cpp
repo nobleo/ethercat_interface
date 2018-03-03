@@ -11,6 +11,19 @@ EthercatInterface::EthercatInterface():
 
 }
 
+EthercatInterface::~EthercatInterface()
+{
+    // Stop PDO transfer
+    pdo_transfer_active_ = false;
+
+    // Request INIT state for all slaves
+    ec_slave[0].state = EC_STATE_INIT;
+    ec_writestate(0);
+
+    // Stop SOEM, close socket
+    ec_close();
+}
+
 bool EthercatInterface::initialize(const std::string &ifname)
 {
     // Initialise SOEM, bind socket to ifname

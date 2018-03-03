@@ -10,6 +10,8 @@ public:
      */
     EthercatInterface();
 
+    ~EthercatInterface();
+
     bool initialize(const std::string& ifname);
 
     // ToDo: statecheck
