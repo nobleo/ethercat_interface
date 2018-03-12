@@ -10,6 +10,7 @@
 
   <!-- EtherCAT part: -->
   <author email="joost.groenen@nobleo.nl">Joost Groenen</author>
+  <author email="ferry.schoenmakers@nobleo.nl">Ferry Schoenmakers</author>
   <!-- Ros control part: -->
   <author email="tim.clephas@nobleo.nl">Tim Clephas</author>
 

@@ -18,3 +18,6 @@ target_link_libraries(ethercat_interface ${catkin_LIBRARIES})
 
 add_executable(ethercat_interface_analog src/ethercat_interface_analog.cpp src/el2008.cpp src/el4002.cpp)
 target_link_libraries(ethercat_interface_analog ${catkin_LIBRARIES})
+
+add_executable(ethercat_interface_fedra src/ethercat_interface_fedra.cpp src/el2502.cpp src/el2004.cpp src/el2008.cpp src/el5002.cpp)
+target_link_libraries(ethercat_interface_fedra ${catkin_LIBRARIES})
