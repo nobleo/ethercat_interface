@@ -18,6 +18,8 @@
 
 #define EC_TIMEOUTMON 500
 #define PDO_PERIOD 5000
+#define STATECHECK_PERIOD 100000
+
 #define MOTORGAIN 0.334 // 1/(200/7/60*2*pi)    [V/rad/s]
 
 char IOmap[4096];
@@ -105,9 +107,9 @@ boolean setup_ethercat(char* ifname)
   else
   {
     ROS_ERROR("No socket connection on %s. Try excecuting the following "
-              "command: sudo setcap cap_net_raw+ep $(readlink $(catkin_find "
-              "ethercat_interface ethercat_interface_analog))\n",
-              ifname);
+                  "command: sudo setcap 'cap_net_raw=ep cap_sys_nice=eip' $(readlink $(catkin_find "
+                  "ethercat_interface ethercat_interface_analog))\n",
+                  ifname);
   }
   return FALSE;
 }
@@ -226,7 +228,7 @@ void* ecat_statecheck(void* ptr)
         ROS_INFO("OK : all slaves resumed OPERATIONAL.");
       }
     }
-    osal_usleep(10000);
+    osal_usleep(STATECHECK_PERIOD);
   }
 }
 
@@ -279,6 +281,43 @@ void EthercatHardware::writeJoints()
   ROS_DEBUG( "Digital = [%d, %d, %d], Analog = [%f, %f]", digitalOut.get_output(0), digitalOut.get_output(2), digitalOut.get_output(4), std::abs(analog_values[0]), std::abs(analog_values[1]) );
 }
 
+// Based on: http://www.yonch.com/tech/82-linux-thread-priority
+void set_realtime_priority(pthread_t* thread) {
+     int ret;
+     // struct sched_param is used to store the scheduling priority
+     struct sched_param params;
+
+     // We'll set the priority to the maximum.
+     params.sched_priority = sched_get_priority_max(SCHED_FIFO);
+     ROS_INFO("Trying to set thread realtime prio = %d",params.sched_priority);
+
+     // Attempt to set thread real-time priority to the SCHED_FIFO policy
+     ret = pthread_setschedparam(*thread, SCHED_FIFO, &params);
+     if (ret != 0) {
+         ROS_ERROR("Unsuccessful in setting thread realtime prio, got error: %d. Possible errors: ESRCH(%d), EINVAL(%d), EPERM(%d)",ret,ESRCH,EINVAL,EPERM);
+         if(ret==EPERM){
+           ROS_ERROR("No appropriate permissions. Try excecuting the following "
+                    "command: sudo setcap 'cap_net_raw=ep cap_sys_nice=eip' $(readlink $(catkin_find "
+                    "ethercat_interface ethercat_interface_analog))\n");
+         }
+         return;
+     }
+     // Now verify the change in thread priority
+     int policy = 0;
+     ret = pthread_getschedparam(*thread, &policy, &params);
+     if (ret != 0) {
+         ROS_ERROR("Couldn't retrieve real-time scheduling parameters, got error: %d. Possible errors: ESRCH(%d), EINVAL(%d), EPERM(%d)",ret,ESRCH,EINVAL,EPERM);
+         return;
+     }
+
+     // Check the correct policy was applied
+     if(policy != SCHED_FIFO) {
+         ROS_ERROR("Scheduling is NOT SCHED_FIFO! Got: %d",policy);
+     } else {
+         ROS_INFO("SCHED_FIFO OK, Thread priority is %d",params.sched_priority);
+     }
+}
+
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "ethercat_interface");
@@ -303,8 +342,10 @@ int main(int argc, char** argv)
     pthread_create(&thread_statecheck, NULL, ecat_statecheck, (void*)&ctime);
     pthread_create(&thread_pdo, NULL, ecat_pdotransfer, (void*)&ctime);
 
-    /* start cyclic part */
+    // Try to set realtime prio on PDO-thread
+    set_realtime_priority(&thread_pdo);
 
+    /* start cyclic part */
     char* interface = new char[ethercat_interface.size() + 1];
     std::copy(ethercat_interface.begin(), ethercat_interface.end(), interface);
     interface[ethercat_interface.size()] = '\0';
